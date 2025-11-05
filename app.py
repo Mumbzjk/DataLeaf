@@ -15,10 +15,10 @@ st.set_page_config(page_title="Data Leaf â€“ Waterloo Pilot MVP", page_icon="ðŸŒ
 
 # ---------- DEMO DATA (synthetic but realistic)
 buildings_data = pd.DataFrame({
-    "facility":["City Hall","Rec Complex","RIM Park","Community Centre","Operations Centre"],
-    "month":["Jan","Feb","Mar","Apr","May","Jun"]*1,
-    "kwh":[85000,83000,80000,78000,76000,75000],
-    "natural_gas_m3":[18000,17500,17000,16000,15000,14500]
+   "facility": ["City Hall", "City Hall", "City Hall", "City Hall", "City Hall", "City Hall"],
+    "month": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    "kwh": [85000, 83000, 80000, 78000, 76000, 75000],
+    "natural_gas_m3": [18000, 17500, 17000, 16000, 15000, 14500]
 })
 fleet_data = pd.DataFrame({
     "vehicle":["Waste Truck 1","Waste Truck 2","Bylaw Car 3","Facilities Van 7"],
