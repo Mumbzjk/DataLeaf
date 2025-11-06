@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import altair as alt
 import os
-
+st.write("🔍 DEBUG: OPENAI key loaded?", bool(os.getenv("OPENAI_API_KEY")))
 # ================= Optional AI =================
 USE_AI = False
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
