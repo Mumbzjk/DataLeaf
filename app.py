@@ -3,7 +3,24 @@ import pandas as pd
 import numpy as np
 import altair as alt
 import os
-st.write("🔍 DEBUG: OPENAI key loaded?", bool(os.getenv("OPENAI_API_KEY")))
+# ================= Optional AI Setup =================
+import os
+import streamlit as st
+from openai import OpenAI
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+
+USE_AI = False
+client = None
+
+if OPENAI_API_KEY:
+    try:
+        client = OpenAI(api_key=OPENAI_API_KEY)  # project ID auto-detected
+        USE_AI = True
+    except Exception as e:
+        st.error(f"❌ AI initialization failed: {e}")
+        USE_AI = False
+
 # ================= Optional AI =================
 USE_AI = False
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
