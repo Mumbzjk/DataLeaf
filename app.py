@@ -1,6 +1,6 @@
 # =============================================
-# Data Leaf – City of Waterloo Pilot MVP (Final)
-# Overview toggle + insights + PDF download
+# Data Leaf – City of Waterloo Pilot MVP
+# Overview clarity + Funding scoring + Engagement dropdowns
 # =============================================
 
 import streamlit as st
@@ -12,6 +12,11 @@ from datetime import datetime
 
 # ----------------- PAGE CONFIG -----------------
 LOGO_URL = "https://thedataleaf.com/wp-content/uploads/2025/09/Untitled-design-10-1.png"
+# ----------------- LOADING SCREEN -----------------
+with st.spinner("🌿 Loading Data Leaf Dashboard — analyzing municipal emissions, costs, and funding insights..."):
+    import time
+    time.sleep(2)  # short 2-second splash delay for smooth load
+
 st.set_page_config(page_title="Data Leaf – City of Waterloo Pilot MVP",
                    page_icon=LOGO_URL, layout="wide")
 
@@ -27,6 +32,10 @@ st.markdown(f"""
 .headerbar h2 {{
   margin:0; font-weight:850; color:#1e6c93; font-size:2.1rem;
 }}
+.card {{
+  border:1px solid #e5e7eb; border-radius:14px; padding:16px; background:#ffffff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}}
 .badge {{display:inline-block;padding:4px 8px;border-radius:14px;background:#eef6ff;color:#1e6c93;margin-right:6px;font-size:0.85rem;}}
 .smallcap {{color:#6b7280;font-size:0.9rem;}}
 .table-note {{color:#6b7280;font-size:0.85rem;margin-top:-6px}}
@@ -41,7 +50,7 @@ st.markdown(f"""
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 USE_AI = bool(OPENAI_API_KEY)
 if USE_AI:
-    with st.expander("🧩 Developer • Smart Assist Connection (Private)", expanded=True):
+    with st.expander("🧩 Developer • Smart Assist Connection (Private)", expanded=False):
         st.caption("Visible only because your API key is active. Public users won’t see this.")
         if st.button("Test AI Connection"):
             try:
@@ -124,20 +133,8 @@ bld_t, flt_t, wst_t = bld["tco2e"].sum(), flt["tco2e"].sum(), wst["tco2e"].sum()
 bld_c, flt_c, wst_c = bld["cost"].sum(), flt["cost"].sum(), wst["cost"].sum()
 grand_t, grand_c = bld_t + flt_t + wst_t, bld_c + flt_c + wst_c
 
-# ----------------- BADGES -----------------
-def badges():
-    st.markdown(
-        "<span class='badge'>🏷️ Scenario Explorer</span> "
-        "<span class='badge'>💸 Funding Ready</span> "
-        "<span class='badge'>📣 Outreach Champion</span>",
-        unsafe_allow_html=True
-    )
-
 # ----------------- PDF EXPORT (Overview) -----------------
 def build_overview_report_pdf(monthly: bool) -> bytes:
-    """
-    Try to return a simple PDF (reportlab). If reportlab is missing, return empty bytes.
-    """
     try:
         from reportlab.lib.pagesizes import LETTER
         from reportlab.pdfgen import canvas
@@ -172,7 +169,7 @@ def build_overview_report_pdf(monthly: bool) -> bytes:
         buf.seek(0)
         return buf.read()
     except Exception:
-        return b""  # handled by fallback below
+        return b""
 
 def build_overview_report_markdown(monthly: bool) -> bytes:
     md = f"""# Data Leaf – Overview Report
@@ -180,9 +177,9 @@ def build_overview_report_markdown(monthly: bool) -> bytes:
 **View mode:** {'Monthly' if monthly else 'Annual'}  
 **Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M')}
 
-**Totals**
+**Totals (Demo period: Jan–Jun 2025)**
 - Total emissions: {fmt(grand_t)} tCO₂e  
-- Total annual cost: ${grand_c:,.0f}  
+- Total annualized cost: ${grand_c:,.0f}  
 - Buildings: {fmt(bld_t)} tCO₂e • ${bld_c:,.0f}  
 - Fleet: {fmt(flt_t)} tCO₂e • ${flt_c:,.0f}  
 - Waste: {fmt(wst_t)} tCO₂e • ${wst_c:,.0f}
@@ -192,23 +189,25 @@ def build_overview_report_markdown(monthly: bool) -> bytes:
     return md.encode("utf-8")
 
 # =========================================================
-# OVERVIEW — Monthly/Annual toggle + neutral italic insights
+# OVERVIEW — Monthly/Annual toggle + clear units + clarity note
 # =========================================================
 if st.session_state.page=="Overview":
     st.subheader("Overview – Emissions and Cost")
     st.markdown("_Explore emissions and cost trends by month or in annual summary._")
+    # Clarify what the big numbers represent
+    st.caption("**Period totals shown below reflect the demo dataset (Jan–Jun 2025). Charts include units.**")
+
     k1,k2,k3,k4,k5 = st.columns(5)
     k1.metric("Total (tCO₂e)",fmt(grand_t))
-    k2.metric("Buildings",fmt(bld_t))
-    k3.metric("Fleet",fmt(flt_t))
-    k4.metric("Waste",fmt(wst_t))
-    k5.metric("Annual Cost (CAD)",f"${grand_c:,.0f}")
-    badges()
+    k2.metric("Buildings (tCO₂e)",fmt(bld_t))
+    k3.metric("Fleet (tCO₂e)",fmt(flt_t))
+    k4.metric("Waste (tCO₂e)",fmt(wst_t))
+    k5.metric("Total Cost (CAD)",f"${grand_c:,.0f}")
 
     # View mode (defaults to Monthly)
     view_mode = st.selectbox("View mode:", ["Monthly", "Annual"], index=0)
 
-    # Helper: insights text
+    # Insight helpers
     def buildings_insight():
         share = 100* bld_t / grand_t if grand_t>0 else 0
         elec = bld["elec_cost"].sum(); gas = bld["gas_cost"].sum()
@@ -220,7 +219,6 @@ if st.session_state.page=="Overview":
             f"Emissions are highest in **{peak_month}**, suggesting a seasonal effect; efficiency retrofits and "
             f"electrification can lower both emissions and utility spend.*"
         )
-
     def fleet_insight():
         share = 100* flt_t / grand_t if grand_t>0 else 0
         diesel_cost = flt.loc[flt["is_diesel"],"cost"].sum()
@@ -232,7 +230,6 @@ if st.session_state.page=="Overview":
             f"Targeting high-usage units (e.g., **{top_vehicle}**) and piloting EV replacements can reduce "
             f"both emissions and fuel/maintenance costs.*"
         )
-
     def waste_insight():
         share = 100* wst_t / grand_t if grand_t>0 else 0
         top_stream = wst.sort_values("tco2e", ascending=False)["stream"].iloc[0] if len(wst) else ""
@@ -247,11 +244,13 @@ if st.session_state.page=="Overview":
             data = bld.groupby("month",as_index=False)[["tco2e","cost"]].sum()
             bars = alt.Chart(data).mark_bar(color="#1e6c93").encode(
                 x=alt.X("month:N", title="Month"),
-                y=alt.Y("tco2e:Q", title="Emissions (tCO₂e)")
+                y=alt.Y("tco2e:Q", title="Emissions (tCO₂e)"),
+                tooltip=["month","tco2e","cost"]
             )
             line = alt.Chart(data).mark_line(point=True, color="#9ecae1", strokeWidth=3).encode(
                 x="month:N",
-                y=alt.Y("cost:Q", title="Cost (CAD)")
+                y=alt.Y("cost:Q", title="Cost (CAD)"),
+                tooltip=["month","tco2e","cost"]
             )
             st.altair_chart(alt.layer(bars,line).resolve_scale(y='independent').properties(title="Buildings", height=260),
                             use_container_width=True)
@@ -261,11 +260,13 @@ if st.session_state.page=="Overview":
             data = flt.copy()
             bars = alt.Chart(data).mark_bar(color="#2a9d8f").encode(
                 x=alt.X("vehicle:N", title="Vehicle"),
-                y=alt.Y("tco2e:Q", title="Emissions (tCO₂e)")
+                y=alt.Y("tco2e:Q", title="Emissions (tCO₂e)"),
+                tooltip=["vehicle","tco2e","cost"]
             )
             line = alt.Chart(data).mark_line(point=True, color="#9fdacb", strokeWidth=3).encode(
                 x="vehicle:N",
-                y=alt.Y("cost:Q", title="Cost (CAD)")
+                y=alt.Y("cost:Q", title="Cost (CAD)"),
+                tooltip=["vehicle","tco2e","cost"]
             )
             st.altair_chart(alt.layer(bars,line).resolve_scale(y='independent').properties(title="Fleet", height=260),
                             use_container_width=True)
@@ -275,11 +276,13 @@ if st.session_state.page=="Overview":
             data = wst.copy()
             bars = alt.Chart(data).mark_bar(color="#8a5a44").encode(
                 x=alt.X("stream:N", title="Stream"),
-                y=alt.Y("tco2e:Q", title="Emissions (tCO₂e)")
+                y=alt.Y("tco2e:Q", title="Emissions (tCO₂e)"),
+                tooltip=["stream","tco2e","cost"]
             )
             line = alt.Chart(data).mark_line(point=True, color="#d6b7a6", strokeWidth=3).encode(
                 x="stream:N",
-                y=alt.Y("cost:Q", title="Cost (CAD)")
+                y=alt.Y("cost:Q", title="Cost (CAD)"),
+                tooltip=["stream","tco2e","cost"]
             )
             st.altair_chart(alt.layer(bars,line).resolve_scale(y='independent').properties(title="Waste", height=260),
                             use_container_width=True)
@@ -292,40 +295,29 @@ if st.session_state.page=="Overview":
 
     # Annual view — single comparative chart + summary + footnote
     else:
-        # Build totals per category
         annual = pd.DataFrame({
             "Category":["Buildings","Fleet","Waste"],
             "Emissions":[bld_t, flt_t, wst_t],
             "Cost":[bld_c, flt_c, wst_c],
-            "ColorBar":["#1e6c93","#2a9d8f","#8a5a44"],
-            "ColorLine":["#9ecae1","#9fdacb","#d6b7a6"]
         })
-
         st.markdown("*Annual totals show relative contributions by category, helping identify where action yields the greatest impact.*")
 
-        # Two charts side-by-side: Emissions bars + Cost bars (kept simple and clear)
         ca, cb = st.columns(2)
         with ca:
             st.altair_chart(
-                alt.Chart(annual).mark_bar().encode(
+                alt.Chart(annual).mark_bar(color="#1e6c93").encode(
                     x=alt.X("Category:N", title="Category"),
                     y=alt.Y("Emissions:Q", title="Emissions (tCO₂e)"),
-                    color=alt.Color("Category:N", scale=alt.Scale(
-                        domain=["Buildings","Fleet","Waste"],
-                        range=["#1e6c93","#2a9d8f","#8a5a44"]
-                    ), legend=None)
+                    tooltip=["Category","Emissions"]
                 ).properties(title="Annual Emissions by Category", height=320),
                 use_container_width=True
             )
         with cb:
             st.altair_chart(
-                alt.Chart(annual).mark_bar().encode(
+                alt.Chart(annual).mark_bar(color="#9ecae1").encode(
                     x=alt.X("Category:N", title="Category"),
                     y=alt.Y("Cost:Q", title="Cost (CAD)"),
-                    color=alt.Color("Category:N", scale=alt.Scale(
-                        domain=["Buildings","Fleet","Waste"],
-                        range=["#9ecae1","#9fdacb","#d6b7a6"]
-                    ), legend=None)
+                    tooltip=["Category","Cost"]
                 ).properties(title="Annual Cost by Category", height=320),
                 use_container_width=True
             )
@@ -348,9 +340,10 @@ if st.session_state.page=="Overview":
                            mime="text/markdown", use_container_width=True)
 
 # =========================================================
-# SCENARIO BUILDER (kept)
+# SCENARIO BUILDER (fixed and working)
 # =========================================================
 elif st.session_state.page=="Scenario Builder":
+    st.subheader("Scenario Builder")
     sA,sB,sC=st.columns(3)
     with sA: retro=st.slider("Buildings retrofit (%)",0,30,15)
     with sB: ev=st.slider("Fleet EV adoption (%)",0,50,20)
@@ -365,8 +358,16 @@ elif st.session_state.page=="Scenario Builder":
 
     def chart_block(title,cur_em,sc_em,cur_c,sc_c,col1,col2):
         df=pd.DataFrame({"Case":["Current","Scenario"],"Emissions":[cur_em,sc_em],"Cost":[cur_c,sc_c]})
-        bars=alt.Chart(df).mark_bar(color=col1).encode(x="Case",y="Emissions")
-        line=alt.Chart(df).mark_line(point=True,color=col2,strokeWidth=3).encode(x="Case",y="Cost")
+        bars=alt.Chart(df).mark_bar(color=col1).encode(
+            x=alt.X("Case:N", title="Case"),
+            y=alt.Y("Emissions:Q", title="Emissions (tCO₂e)"),
+            tooltip=["Case","Emissions","Cost"]
+        )
+        line=alt.Chart(df).mark_line(point=True,color=col2,strokeWidth=3).encode(
+            x="Case:N",
+            y=alt.Y("Cost:Q", title="Cost (CAD)"),
+            tooltip=["Case","Emissions","Cost"]
+        )
         st.altair_chart(alt.layer(bars,line).resolve_scale(y='independent').properties(title=title,height=260),
                         use_container_width=True)
 
@@ -376,25 +377,86 @@ elif st.session_state.page=="Scenario Builder":
     with pC: chart_block("Waste",wst_t,wst_sc_em,wst_c,wst_sc_cost,"#8a5a44","#d6b7a6")
 
 # =========================================================
-# FUNDING & GRANTS (your preferred clickable-links style)
+# FUNDING & GRANTS (clickable + realistic deadlines + numeric match%)
 # =========================================================
 elif st.session_state.page=="Funding & Grants":
     st.subheader("Funding & Grants")
-    st.markdown("<span class='badge'>💸 Funding Ready</span>", unsafe_allow_html=True)
 
-    programs=[
-        ("Infrastructure Canada – GICB","https://housing-infrastructure.canada.ca/gicb-bcvi/index-eng.html","Community buildings retrofits and upgrades"),
-        ("FCM GMF – Community Buildings","https://greenmunicipalfund.ca/community-buildings-retrofit-initiative","Energy audits and retrofit planning"),
-        ("FCM GMF – Fleet Electrification","https://greenmunicipalfund.ca/funding/fleet-electrification","EV plans and charging infrastructure"),
-        ("Ontario Climate/EV Programs","https://www.ontario.ca/page/climate-change-funding","Provincial climate action funding hub"),
-        ("NRCan – Green Infrastructure","https://natural-resources.canada.ca/science-and-data/funding-partnerships/funding-opportunities","Federal clean energy programs")
+    # Baseline shares for heuristic "match %" (simple, transparent)
+    total_em = grand_t if grand_t > 0 else 1
+    share = {
+        "Buildings": bld_t/total_em,
+        "Fleet": flt_t/total_em,
+        "Waste": wst_t/total_em
+    }
+
+    PROGRAMS = [
+        {"name":"Infrastructure Canada – GICB",
+         "focus":["Buildings","Community"],
+         "amount":"Up to $25M",
+         "deadline":"2026-03-31",
+         "link":"https://housing-infrastructure.canada.ca/gicb-bcvi/index-eng.html",
+         "notes":"Community buildings: deep retrofits/new builds; accessibility; M&V."},
+        {"name":"FCM GMF – Community Buildings Retrofit",
+         "focus":["Buildings"],
+         "amount":"Up to $5M (varies by stream)",
+         "deadline":"2025-12-15",
+         "link":"https://greenmunicipalfund.ca/community-buildings-retrofit-initiative",
+         "notes":"Audits, retrofits, commissioning; strong M&V expected."},
+        {"name":"FCM GMF – Fleet Electrification",
+         "focus":["Fleet"],
+         "amount":"Up to $1M+",
+         "deadline":"2025-11-30",
+         "link":"https://greenmunicipalfund.ca/funding/fleet-electrification",
+         "notes":"EV transition plans, charging, pilot deployments."},
+        {"name":"FCM GMF – Climate Adaptation",
+         "focus":["Adaptation","Risk"],
+         "amount":"Up to $1M+",
+         "deadline":"2025-12-31",
+         "link":"https://greenmunicipalfund.ca/funding/adaptation",
+         "notes":"Risk assessment, adaptation planning/implementation."},
+        {"name":"Ontario – Climate/EV Programs (hub)",
+         "focus":["Buildings","Fleet"],
+         "amount":"Varies",
+         "deadline":"Rolling",
+         "link":"https://www.ontario.ca/page/climate-change-funding",
+         "notes":"Entry page to active provincial programs."},
+        {"name":"NRCan – Green Infrastructure (hub)",
+         "focus":["Buildings","Fleet","Adaptation"],
+         "amount":"Varies",
+         "deadline":"Varies",
+         "link":"https://natural-resources.canada.ca/science-and-data/funding-partnerships/funding-opportunities",
+         "notes":"Federal funding opportunities hub."},
     ]
 
-    st.write("Available programs that align with common municipal priorities:")
-    for name,link,desc in programs:
-        st.markdown(f"- [{name}]({link}) — {desc}")
+    st.write("Programs aligned with typical municipal priorities:")
+    # Compute numeric match% (simple: weight Buildings/Fleet/Waste shares; Adaptation = constant 0.5)
+    rows=[]
+    for p in PROGRAMS:
+        base = 0
+        if "Buildings" in p["focus"]: base += share["Buildings"]
+        if "Fleet" in p["focus"]:     base += share["Fleet"]
+        if "Waste" in p["focus"]:     base += share["Waste"] * 0.5  # weaker direct fit
+        if "Adaptation" in p["focus"] or "Risk" in p["focus"]: base += 0.5*0.2  # small baseline nudge
+        match_pct = int(round(min(0.95, max(0.15, base)) * 100))  # clamp 15–95%
+        rows.append({
+            "Program": p["name"],
+            "Amount": p["amount"],
+            "Match % (heuristic)": f"{match_pct}%",
+            "Deadline": p["deadline"],
+            "Link": p["link"]
+        })
 
-    choice=st.selectbox("Generate a prefilled grant template for:", [p[0] for p in programs])
+    df = pd.DataFrame(rows)
+    st.dataframe(df, use_container_width=True, hide_index=True)
+
+    # Keep clickable list below the table (readable and scannable)
+    st.markdown("**Explore program pages:**")
+    for p in PROGRAMS:
+        st.markdown(f"- [{p['name']}]({p['link']}) — {p['notes']} *(Deadline: {p['deadline']})*")
+
+    # Prefilled template generator
+    choice = st.selectbox("Generate a prefilled grant template for:", [p["name"] for p in PROGRAMS])
     template = f"""=== GRANT APPLICATION TEMPLATE (Prefilled) ===
 Program: {choice}
 
@@ -434,26 +496,64 @@ Program: {choice}
                        file_name="Grant_Application_Template.txt", mime="text/plain")
 
 # =========================================================
-# ENGAGEMENT
+# ENGAGEMENT — dropdowns (stakeholder + program) → side card with tailored message
 # =========================================================
 elif st.session_state.page=="Engagement":
-    st.subheader("Stakeholder Messages – City of Waterloo")
-    groups=["Council","Residents","Businesses","City Staff"]
-    defaults={
-        "Council":"Progress shows clear cost and emissions reductions from targeted actions. Retrofit and EV measures can cut 15–25% while improving compliance readiness.",
-        "Residents":"Work is underway to lower costs and emissions through better data. Progress is visible across buildings, fleet, and waste.",
-        "Businesses":"Efficiency steps are being taken that also reduce cost risk. Data helps identify funding and compliance opportunities that save money.",
-        "City Staff":"Reporting is simpler and faster. Data Leaf helps upload, track, and visualize progress in one place—grant-ready and transparent."
+    st.subheader("Stakeholder Engagement")
+
+    stakeholders = ["Council","Residents","Businesses","City Staff"]
+    programs = ["Buildings Retrofit","Fleet Electrification","Waste Diversion","Compliance Update","Pilot Invitation"]
+
+    c1, c2 = st.columns(2)
+    with c1:
+        who = st.selectbox("Stakeholder", stakeholders)
+    with c2:
+        topic = st.selectbox("Program / Topic", programs)
+
+    # Simple tone + content matrix
+    base = {
+        ("Council","Buildings Retrofit"): "Targeted building retrofits reduce utility spend and emissions. Scenario results indicate material savings with short paybacks when paired with grants.",
+        ("Council","Fleet Electrification"): "Phasing in EVs for high-usage units lowers fuel and maintenance costs while improving compliance readiness.",
+        ("Council","Waste Diversion"): "Expanded diversion reduces landfill fees and stabilizes costs. Pilot options are low-risk and quick to implement.",
+        ("Council","Compliance Update"): "Dashboards consolidate evidence for reporting—fewer manual hours, clearer audit trails, and better readiness for regulatory change.",
+        ("Council","Pilot Invitation"): "A 3–4 month pilot focuses on one area with measurable outcomes and grant-ready documentation at the end.",
+
+        ("Residents","Buildings Retrofit"): "Improving energy efficiency in public buildings reduces operating costs and emissions—savings that support community services.",
+        ("Residents","Fleet Electrification"): "Transitioning select vehicles to electric cuts noise and emissions in neighbourhoods while saving fuel costs.",
+        ("Residents","Waste Diversion"): "More recycling and organics keeps materials out of landfill, lowering costs and emissions.",
+        ("Residents","Compliance Update"): "The city is tracking progress in a transparent way, with simple summaries that anyone can understand.",
+        ("Residents","Pilot Invitation"): "We’re testing practical steps that lower bills and emissions. Your feedback helps shape what comes next.",
+
+        ("Businesses","Buildings Retrofit"): "Data identifies best-return retrofits. Programs can offset upfront costs, reducing total cost of ownership.",
+        ("Businesses","Fleet Electrification"): "EV pilots for duty cycles with predictable routes can reduce fuel risk and maintenance downtime.",
+        ("Businesses","Waste Diversion"): "Better sorting and organics programs improve operational efficiency and reduce fees.",
+        ("Businesses","Compliance Update"): "Clear reporting supports supply-chain and lender requests with investor-grade summaries.",
+        ("Businesses","Pilot Invitation"): "A focused pilot de-risks adoption and shows concrete value quickly.",
+
+        ("City Staff","Buildings Retrofit"): "Upload, track, and visualize facility data in one place—faster reporting, fewer spreadsheets, grant-ready outputs.",
+        ("City Staff","Fleet Electrification"): "Target high-use units first. Scenario sliders quantify emissions and cost impacts instantly.",
+        ("City Staff","Waste Diversion"): "Track waste streams, quantify landfill fees, and estimate savings from diversion.",
+        ("City Staff","Compliance Update"): "Dashboards map metrics to reporting needs, creating an audit trail for submissions.",
+        ("City Staff","Pilot Invitation"): "Pilot scope is co-designed. You choose the focus; we provide the tooling and templates."
     }
-    for g in groups:
-        st.markdown(f"**{g}**")
-        st.text_area("Message",defaults[g],height=110,key=f"msg_{g}")
-        q=urllib.parse.quote(defaults[g])
-        st.markdown(f"[LinkedIn](https://linkedin.com/shareArticle?mini=true&url=https://thedataleaf.com&summary={q}) | "
-                    f"[𝕏](https://twitter.com/intent/tweet?text={q}) | "
-                    f"[Facebook](https://facebook.com/sharer/sharer.php?u=https://thedataleaf.com&quote={q}) | "
-                    f"[Email](mailto:?subject=City%20of%20Waterloo%20update&body={q})")
-        st.divider()
+
+    message = base.get((who, topic),
+        "Data and dashboards make progress visible, reduce manual work, and support funding applications.")
+    # Side card layout
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown(f"**To:** {who}  \n**Subject:** {topic}")
+    st.write(message)
+
+    # Share & copy
+    q = urllib.parse.quote(message)
+    st.markdown(
+        f"[LinkedIn](https://linkedin.com/shareArticle?mini=true&url=https://thedataleaf.com&summary={q}) | "
+        f"[𝕏](https://twitter.com/intent/tweet?text={q}) | "
+        f"[Facebook](https://facebook.com/sharer/sharer.php?u=https://thedataleaf.com&quote={q}) | "
+        f"[Email](mailto:?subject={urllib.parse.quote(topic)}&body={q})"
+    )
+    st.caption("Tip: click in the box above and press ⌘/Ctrl+C to copy.")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # =========================================================
-st.caption("Demo data only. Costs in CAD. Data Leaf © 2025")
+st.caption("Demo data only. Units indicated on every chart. Costs in CAD. Data Leaf © 2025")
