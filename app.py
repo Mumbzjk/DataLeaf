@@ -38,48 +38,49 @@ hr {{border:none;border-top:1px solid #e5e7eb;margin:8px 0 12px 0;}}
 </style>
 """, unsafe_allow_html=True)
 
-# Header
-st.markdown(
-    f"""<div class="headerbar">
-        <img src="{LOGO_URL}" alt="Data Leaf logo">
-        <h2>Data Leaf – City of Waterloo Pilot MVP</h2>
-    </div>""",
-    unsafe_allow_html=True
-)
+# ----------------- HEADER & LOGO -----------------
+st.markdown(f"""
+<style>
+.headerbar {{
+  display:flex; align-items:center; gap:16px; margin-top:-10px; margin-bottom:12px;
+}}
+.headerbar img {{
+  width:120px; height:auto; border-radius:14px; object-fit:contain;
+}}
+.headerbar h2 {{
+  margin:0; font-weight:850; color:#1e6c93; font-size:1.9rem;
+}}
+</style>
+<div class="headerbar">
+    <img src="{LOGO_URL}" alt="Data Leaf logo">
+    <h2>Data Leaf – City of Waterloo Pilot MVP</h2>
+</div>
+""", unsafe_allow_html=True)
 
 # ----------------- PRIVATE ADMIN (DEVELOPER ONLY) -----------------
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 USE_AI = bool(OPENAI_API_KEY)
 
-if st._is_running_with_streamlit and st.experimental_user.email:  # Only visible to developer logged in
+# Show Smart Assist section only if key is detected (developer view)
+if USE_AI:
     with st.expander("🧩 Developer • Smart Assist Connection (Private)", expanded=True):
-        st.caption("Visible only in developer workspace; hidden for public demos.")
+        st.caption("Visible only because an API key is present; hidden for public viewers.")
         if st.button("Test AI Connection"):
-            if not USE_AI:
-                st.error("No API key found. Add it under Streamlit → Settings → Secrets.")
-            else:
-                try:
-                    r = requests.post("https://api.openai.com/v1/chat/completions",
-                        headers={"Authorization": f"Bearer {OPENAI_API_KEY}",
-                                 "Content-Type":"application/json"},
-                        json={"model":"gpt-4o-mini",
-                              "messages":[{"role":"user","content":"Reply only with Connected."}]})
-                    if "Connected" in r.text:
-                        st.success("✅ Connected to Smart Assist.")
-                    else:
-                        st.warning("⚠️ Could not confirm. Check key or plan balance.")
-                except Exception as e:
-                    st.error(f"❌ Error: {e}")
+            try:
+                r = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {OPENAI_API_KEY}",
+                             "Content-Type": "application/json"},
+                    json={"model": "gpt-4o-mini",
+                          "messages": [{"role": "user", "content": "Reply only with Connected."}]}
+                )
+                if "Connected" in r.text:
+                    st.success("✅ Connected to Smart Assist.")
+                else:
+                    st.warning("⚠️ Could not confirm. Check your key or balance.")
+            except Exception as e:
+                st.error(f"❌ Error: {e}")
 
-# ----------------- NAVIGATION -----------------
-if "page" not in st.session_state:
-    st.session_state.page = "Overview"
-
-st.session_state.page = st.segmented_control(
-    "Navigate",
-    options=["Overview","Scenario Builder","Funding & Grants","Engagement"],
-    default=st.session_state.page,
-)
 
 # ----------------- MODE -----------------
 mode = st.radio("Mode", ["Demo", "Pilot (upload data)"], horizontal=True)
