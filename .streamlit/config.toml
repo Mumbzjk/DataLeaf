@@ -1,0 +1,24 @@
+# ============================================
+# Streamlit Theme Configuration for Data Leaf MVP
+# ============================================
+
+[theme]
+primaryColor = "#1e6c93"          # Data Leaf Blue
+backgroundColor = "#ffffff"       # Clean white background
+secondaryBackgroundColor = "#f4f8fb"
+textColor = "#0c0c0c"
+font = "sans serif"
+
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = true
+maxUploadSize = 200
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = "false"
+
+[ui]
+favicon = "https://thedataleaf.com/wp-content/uploads/2025/09/Untitled-design-10-1.png"
+logo = "https://thedataleaf.com/wp-content/uploads/2025/09/Untitled-design-10-1.png"
