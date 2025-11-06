@@ -1,6 +1,5 @@
 # =============================================
-# Data Leaf – City of Waterloo Pilot MVP (Final)
-# Streamlit | Built for Demo + Pilot Uploads
+# Data Leaf – City of Waterloo Pilot MVP (Final, fixed)
 # =============================================
 
 import streamlit as st
@@ -8,48 +7,28 @@ import pandas as pd
 import numpy as np
 import altair as alt
 import requests, os, urllib.parse, time, math
-from datetime import datetime
 
 # ----------------- PAGE CONFIG -----------------
 LOGO_URL = "https://thedataleaf.com/wp-content/uploads/2025/09/Untitled-design-10-1.png"
 st.set_page_config(page_title="Data Leaf – City of Waterloo Pilot MVP",
                    page_icon=LOGO_URL, layout="wide")
 
-# ----------------- STYLES -----------------
-st.markdown(f"""
-<style>
-.headerbar {{
-  display:flex; align-items:center; gap:14px; margin-top:-10px; margin-bottom:12px;
-}}
-.headerbar img {{
-  width:80px; height:auto; border-radius:12px; object-fit:contain;
-}}
-.headerbar h2 {{
-  margin:0; font-weight:800; color:#1e6c93;
-}}
-.navbtn {{padding:8px 14px;border-radius:999px;border:1px solid #e5e7eb;
-background:#fff;color:#111827;text-decoration:none;font-weight:600;}}
-.navbtn.active {{background:#1e6c93;color:#fff;border-color:#1e6c93;}}
-.badge {{display:inline-block;padding:4px 8px;border-radius:14px;background:#eef6ff;color:#1e6c93;margin-right:6px;font-size:0.85rem;}}
-.pulse {{width:8px;height:8px;border-radius:50%;background:#22c55e;
-box-shadow:0 0 0 6px rgba(34,197,94,.15);display:inline-block;}}
-.smallcap {{color:#6b7280;font-size:0.9rem;}}
-hr {{border:none;border-top:1px solid #e5e7eb;margin:8px 0 12px 0;}}
-</style>
-""", unsafe_allow_html=True)
-
-# ----------------- HEADER & LOGO -----------------
+# ----------------- STYLES + HEADER -----------------
 st.markdown(f"""
 <style>
 .headerbar {{
   display:flex; align-items:center; gap:16px; margin-top:-10px; margin-bottom:12px;
 }}
 .headerbar img {{
-  width:120px; height:auto; border-radius:14px; object-fit:contain;
+  width:150px; height:auto; border-radius:14px; object-fit:contain;
 }}
 .headerbar h2 {{
-  margin:0; font-weight:850; color:#1e6c93; font-size:1.9rem;
+  margin:0; font-weight:850; color:#1e6c93; font-size:2.0rem;
 }}
+.badge {{display:inline-block;padding:4px 8px;border-radius:14px;background:#eef6ff;color:#1e6c93;margin-right:6px;font-size:0.85rem;}}
+.pulse {{width:8px;height:8px;border-radius:50%;background:#22c55e;
+box-shadow:0 0 0 6px rgba(34,197,94,.15);display:inline-block;}}
+.smallcap {{color:#6b7280;font-size:0.9rem;}}
 </style>
 <div class="headerbar">
     <img src="{LOGO_URL}" alt="Data Leaf logo">
@@ -57,14 +36,13 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ----------------- PRIVATE ADMIN (DEVELOPER ONLY) -----------------
+# ----------------- PRIVATE ADMIN (developer-only when key present) -----------------
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 USE_AI = bool(OPENAI_API_KEY)
 
-# Show Smart Assist section only if key is detected (developer view)
 if USE_AI:
     with st.expander("🧩 Developer • Smart Assist Connection (Private)", expanded=True):
-        st.caption("Visible only because an API key is present; hidden for public viewers.")
+        st.caption("Visible only because your API key is active. Public users won’t see this.")
         if st.button("Test AI Connection"):
             try:
                 r = requests.post(
@@ -77,10 +55,18 @@ if USE_AI:
                 if "Connected" in r.text:
                     st.success("✅ Connected to Smart Assist.")
                 else:
-                    st.warning("⚠️ Could not confirm. Check your key or balance.")
+                    st.warning("⚠️ Could not confirm connection. Check key or plan balance.")
             except Exception as e:
                 st.error(f"❌ Error: {e}")
 
+# ----------------- NAVIGATION -----------------
+if "page" not in st.session_state:
+    st.session_state.page = "Overview"
+st.session_state.page = st.segmented_control(
+    "Navigate",
+    options=["Overview", "Scenario Builder", "Funding & Grants", "Engagement"],
+    default=st.session_state.page
+)
 
 # ----------------- MODE -----------------
 mode = st.radio("Mode", ["Demo", "Pilot (upload data)"], horizontal=True)
@@ -156,6 +142,7 @@ if st.session_state.page=="Overview":
     st.markdown("<div class='smallcap'><span class='pulse'></span> Live Overview</div>",unsafe_allow_html=True)
 
     play=st.button("▶ Animate 10s")
+
     def overview(wobble=1.0):
         ca,cb,cc=st.columns(3)
         with ca:
@@ -182,6 +169,7 @@ elif st.session_state.page=="Scenario Builder":
     with sA: retro=st.slider("Buildings retrofit (%)",0,30,15)
     with sB: ev=st.slider("Fleet EV adoption (%)",0,50,20)
     with sC: div=st.slider("Waste diversion (%)",0,50,10)
+
     bld_sc_em=bld_t*(1-retro/100);flt_sc_em=flt_t*(1-ev/100);wst_sc_em=wst_t*(1-div/100)
     bld_sc_cost=bld_cost*(1-retro/100);flt_sc_cost=flt_cost*(1-ev/100);wst_sc_cost=wst_cost*(1-div/100)
 
