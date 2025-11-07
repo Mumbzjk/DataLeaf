@@ -382,105 +382,155 @@ elif nav=="Scenario Builder":
     """, unsafe_allow_html=True)
 
     # --- PDF Export ---
-        # --- PDF Export ---
+          # --- PDF Export ---
     from io import BytesIO
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen import canvas
     from reportlab.lib.utils import ImageReader
     from textwrap import wrap
+    import tempfile, os
 
-    st.markdown("#### 📄 Download Scenario Summary")
+    st.markdown("#### 📄 Download Scenario Summary (with Charts)")
 
     if st.button("Generate PDF"):
+        # --- Create temporary files for charts ---
+        temp_dir = tempfile.mkdtemp()
+
+        def save_chart_as_png(chart, filename):
+            path = os.path.join(temp_dir, filename)
+            chart.save(path, format="png", scale_factor=2)
+            return path
+
+        # Re-create charts for PNG export
+        charts = []
+        charts.append(save_chart_as_png(
+            alt.Chart(pd.DataFrame({
+                "Metric": ["Baseline Emissions", "Scenario Emissions", "Baseline Cost ($000)", "Scenario Cost ($000)"],
+                "Value": [b_em, b_em_s, b_cost/1000, b_cost_s/1000],
+                "Category": ["Emissions", "Emissions", "Cost", "Cost"]
+            }))
+            .mark_bar(size=40)
+            .encode(x="Metric", y="Value", color=alt.Color("Category:N",
+                    scale=alt.Scale(domain=["Emissions", "Cost"], range=["#1e6c93", "#b0bec5"]))),
+            "buildings_chart.png"))
+
+        charts.append(save_chart_as_png(
+            alt.Chart(pd.DataFrame({
+                "Metric": ["Baseline Emissions", "Scenario Emissions", "Baseline Cost ($000)", "Scenario Cost ($000)"],
+                "Value": [f_em, f_em_s, f_cost/1000, f_cost_s/1000],
+                "Category": ["Emissions", "Emissions", "Cost", "Cost"]
+            }))
+            .mark_bar(size=40)
+            .encode(x="Metric", y="Value", color=alt.Color("Category:N",
+                    scale=alt.Scale(domain=["Emissions", "Cost"], range=["#2e7d32", "#b0bec5"]))),
+            "fleet_chart.png"))
+
+        charts.append(save_chart_as_png(
+            alt.Chart(pd.DataFrame({
+                "Metric": ["Baseline Emissions", "Scenario Emissions", "Baseline Cost ($000)", "Scenario Cost ($000)"],
+                "Value": [w_em, w_em_s, w_cost/1000, w_cost_s/1000],
+                "Category": ["Emissions", "Emissions", "Cost", "Cost"]
+            }))
+            .mark_bar(size=40)
+            .encode(x="Metric", y="Value", color=alt.Color("Category:N",
+                    scale=alt.Scale(domain=["Emissions", "Cost"], range=["#8a5a44", "#b0bec5"]))),
+            "waste_chart.png"))
+
+        # --- Start PDF ---
         buffer = BytesIO()
         c = canvas.Canvas(buffer, pagesize=letter)
         width, height = letter
         y = height - 50
 
-        # --- Logo + Title ---
+        # Logo + title
         try:
             logo_url = "https://thedataleaf.com/wp-content/uploads/2025/09/Untitled-design-10-1.png"
             logo_img = ImageReader(logo_url)
             c.drawImage(logo_img, 50, y - 40, width=120, height=40, mask='auto')
-        except Exception as e:
-            print(f"Logo load failed: {e}")
+        except Exception:
+            pass
         c.setFont("Helvetica-Bold", 14)
         c.drawString(190, y - 20, "City of Waterloo – Scenario Summary")
         y -= 70
 
+        # Slider settings
         c.setFont("Helvetica", 11)
-        c.drawString(50, y, f"Buildings retrofit: {retrofit}%")
-        y -= 15
-        c.drawString(50, y, f"Fleet EV adoption: {ev}%")
-        y -= 15
-        c.drawString(50, y, f"Waste diversion: {diversion}%")
-        y -= 30
+        for line in [
+            f"Buildings retrofit: {retrofit}%",
+            f"Fleet EV adoption: {ev}%",
+            f"Waste diversion: {diversion}%"
+        ]:
+            c.drawString(50, y, line)
+            y -= 15
+        y -= 10
 
-        # --- Each Scenario System Summary ---
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(50, y, "Scenario Summaries:")
-        y -= 20
-        c.setFont("Helvetica", 10)
+        # --- Insert each scenario chart + summary ---
         scenarios = [
-            ("Buildings", b_em, b_em_s, b_cost, b_cost_s, "#1e6c93"),
-            ("Fleet", f_em, f_em_s, f_cost, f_cost_s, "#2e7d32"),
-            ("Waste", w_em, w_em_s, w_cost, w_cost_s, "#8a5a44")
+            ("Buildings", charts[0], b_em, b_em_s, b_cost, b_cost_s, "#1e6c93"),
+            ("Fleet", charts[1], f_em, f_em_s, f_cost, f_cost_s, "#2e7d32"),
+            ("Waste", charts[2], w_em, w_em_s, w_cost, w_cost_s, "#8a5a44")
         ]
-        for name, em_now, em_new, cost_now, cost_new, _ in scenarios:
+
+        for name, chart_path, em_now, em_new, cost_now, cost_new, color in scenarios:
             diff_em = em_now - em_new
             diff_cost = cost_now - cost_new
+
+            c.setFont("Helvetica-Bold", 12)
+            c.setFillColorRGB(0, 0, 0)
+            c.drawString(50, y, f"{name} Scenario")
+            y -= 10
+            try:
+                c.drawImage(chart_path, 60, y - 150, width=450, height=120)
+                y -= 140
+            except Exception:
+                y -= 20
+
+            c.setFont("Helvetica", 10)
             lines = [
-                f"{name}:",
-                f"  • Baseline: {em_now:.1f} tCO₂e, ${cost_now:,.0f}",
-                f"  • Scenario: {em_new:.1f} tCO₂e, ${cost_new:,.0f}",
-                f"  • Reduction: {diff_em:.1f} tCO₂e, Savings: ${diff_cost:,.0f}"
+                f"• Emission reduction: {diff_em:.1f} tCO₂e",
+                f"• Estimated cost savings: ${diff_cost:,.0f}"
             ]
             for line in lines:
                 c.drawString(60, y, line)
                 y -= 13
-            y -= 5
+            y -= 10
 
-        y -= 10
+            if y < 120:
+                c.showPage()
+                y = height - 70
 
-        # --- Overall AI + System Summary ---
+        # --- AI & overall summaries ---
         if st.session_state.ai_summary:
             c.setFont("Helvetica-Bold", 12)
             c.drawString(50, y, "AI-Generated Insight:")
             y -= 15
             c.setFont("Helvetica", 10)
-            wrapped_ai = wrap(st.session_state.ai_summary, 90)
-            for line in wrapped_ai:
+            for line in wrap(st.session_state.ai_summary, 90):
                 if y < 100:
-                    c.showPage()
-                    y = height - 50
-                    c.setFont("Helvetica", 10)
+                    c.showPage(); y = height - 70; c.setFont("Helvetica", 10)
                 c.drawString(60, y, line)
                 y -= 13
+            y -= 10
 
-        y -= 15
         c.setFont("Helvetica-Bold", 12)
         c.drawString(50, y, "Overall System-Calculated Summary:")
         y -= 15
         c.setFont("Helvetica", 10)
-        wrapped_fb = wrap(fallback_text, 90)
-        for line in wrapped_fb:
+        for line in wrap(fallback_text, 90):
             if y < 100:
-                c.showPage()
-                y = height - 50
-                c.setFont("Helvetica", 10)
+                c.showPage(); y = height - 70; c.setFont("Helvetica", 10)
             c.drawString(60, y, line)
             y -= 13
 
-        # --- Footer ---
+        # Footer
         c.setFont("Helvetica-Oblique", 9)
         c.drawString(50, 40, "Generated by Data Leaf – AI-assisted Sustainability Dashboard")
         c.save()
 
-        pdf = buffer.getvalue()
-        buffer.close()
+        pdf = buffer.getvalue(); buffer.close()
 
         st.download_button(
-            "📥 Download Complete Scenario Summary (PDF)",
+            "📥 Download Complete Scenario Summary (PDF with Charts)",
             data=pdf,
             file_name="Waterloo_Scenario_Summary.pdf",
             mime="application/pdf"
