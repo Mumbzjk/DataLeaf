@@ -214,7 +214,7 @@ if nav=="Overview":
             unsafe_allow_html=True)
 
         # AI Summary generation
-        key = f"ai_summary_{title}"
+    key = f"ai_summary_{title}"
         if key not in st.session_state:
             st.session_state[key] = None
 
