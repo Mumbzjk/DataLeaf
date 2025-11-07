@@ -251,7 +251,6 @@ if nav=="Overview":
 # =========================================================
 elif nav=="Scenario Builder":
     
-       elif nav=="Scenario Builder":
     st.subheader("Scenario Builder")
     st.caption("Plan, compare, and summarize ‘what-if’ policy scenarios for Waterloo’s emissions and costs.")
 
