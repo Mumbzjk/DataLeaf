@@ -126,7 +126,7 @@ grand_t, grand_c = bld_t + flt_t + wst_t, bld_c + flt_c + wst_c
 # =========================================================
 # OVERVIEW — Interactive + AI + System Summaries
 # =========================================================
-elif nav=="Overview":
+if nav=="Overview":
 
     # --- Hide Streamlit header & adjust top spacing ---
     st.markdown("""
