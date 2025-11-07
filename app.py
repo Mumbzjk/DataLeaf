@@ -286,6 +286,46 @@ elif nav=="Scenario Builder":
     with c2: chart_block("Fleet", f_em, f_em_s, f_cost, f_cost_s, "#2a9d8f", "#9fdacb")
     with c3: chart_block("Waste", w_em, w_em_s, w_cost, w_cost_s, "#8a5a44", "#d6b7a6")
 
+        # -------------------- AI Summary + Fallback --------------------
+    st.divider()
+    st.markdown("### 🤖 Scenario Summary")
+
+    if st.button("Generate AI Summary"):
+        if OPENAI_API_KEY:
+            prompt = f"""
+            The City of Waterloo scenario includes:
+            - Buildings retrofit: {retrofit}%
+            - Fleet EV adoption: {ev}%
+            - Waste diversion: {diversion}%
+            Current total: {b_em + f_em + w_em:.1f} tCO₂e, ${b_cost + f_cost + w_cost:,.0f}.
+            Scenario total: {b_em_s + f_em_s + w_em_s:.1f} tCO₂e, ${b_cost_s + f_cost_s + w_cost_s:,.0f}.
+            Write a concise (3–5 sentence) summary explaining results in plain language, including savings and policy relevance.
+            """
+            try:
+                r = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {OPENAI_API_KEY}",
+                             "Content-Type": "application/json"},
+                    json={"model": "gpt-4o-mini",
+                          "messages": [{"role": "user", "content": prompt}]})
+                ai_summary = r.json()["choices"][0]["message"]["content"]
+                st.markdown("<div class='card'>", unsafe_allow_html=True)
+                st.success("AI-Generated Summary:")
+                st.write(ai_summary)
+                st.markdown("</div>", unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"AI summary request failed: {e}")
+        else:
+            st.warning("OpenAI key not found – showing fallback summary instead.")
+
+    # --- Hybrid fallback summary (auto if AI not run) ---
+    reduction = (1 - (b_em_s + f_em_s + w_em_s) / (b_em + f_em + w_em)) * 100
+    savings = (b_cost + f_cost + w_cost) - (b_cost_s + f_cost_s + w_cost_s)
+    st.info(f"**Fallback Summary:** Estimated emissions reduction of {reduction:.1f}% "
+            f"and cost savings around ${savings:,.0f}. "
+            "This scenario supports Waterloo’s compliance readiness and demonstrates measurable progress.")
+
+
 # =========================================================
 # FUNDING & GRANTS — Full Intelligent Funding Centre
 # =========================================================
