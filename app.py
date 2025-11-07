@@ -372,8 +372,27 @@ elif nav=="Funding & Grants":
         })
 
     st.markdown("**Available Programs**")
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-    st.caption("_Click any program name above to open the official funding page._")
+    # Create a clean, clickable funding table (no raw HTML or repetition)
+    funding_df = pd.DataFrame(rows)
+
+    def make_clickable(val):
+        """Turn markdown link into an HTML hyperlink that opens in a new tab."""
+        if "](" in val:  # Markdown link pattern
+            label = val.split("](")[0].replace("[", "")
+            url = val.split("](")[1].replace(")", "")
+            return f'<a href="{url}" target="_blank" style="text-decoration:none; color:#1e6c93; font-weight:600;">{label}</a>'
+        return val
+
+    funding_df["Program"] = funding_df["Program"].apply(make_clickable)
+
+    # Display as HTML so the links stay clickable
+    st.write(
+        funding_df.to_html(escape=False, index=False),
+        unsafe_allow_html=True
+    )
+
+    st.caption("_Click any program name to open the official page._")
+
 
     # Expandable summaries (clean, no duplicate link list)
     st.markdown("### Explore Program Summaries")
