@@ -173,19 +173,30 @@ if nav=="Overview":
         em_t, cost_t = df["tCO2e"].sum(), df["Cost_CAD"].sum()
 
         # Interactive graph (hover + zoom)
-        chart = alt.Chart(df).transform_fold(
-            ["Emissions (tCO₂e)", "Cost ($CAD)"], as_=["Metric", "Value"]
-        ).mark_line(interpolate="monotone", point=True).encode(
-            x=alt.X("Month", sort=months),
-            y=alt.Y("Value:Q", title=None),
-            color=alt.Color("Metric:N", scale=alt.Scale(
-                domain=["Emissions (tCO₂e)", "Cost ($CAD)"],
-                range=[color, "#b0bec5"])),
-            tooltip=["Month", "Metric", alt.Tooltip("Value:Q", format=",.2f")]
-        ).interactive().properties(width=300, height=180, title=title)
+        df["Emissions"] = df["tCO2e"]
+df["Cost"] = df["Cost_CAD"]
 
-        st.altair_chart(chart, use_container_width=True)
-        st.caption(f"Total: {em_t:,.1f} tCO₂e | ${cost_t:,.0f} CAD")
+chart = (
+    alt.Chart(df)
+    .transform_fold(["Emissions", "Cost"], as_=["Metric", "Value"])
+    .mark_line(interpolate="monotone", point=True)
+    .encode(
+        x=alt.X("Month:N", sort=months, title=None),
+        y=alt.Y("Value:Q", title="Emissions / Cost"),
+        color=alt.Color(
+            "Metric:N",
+            scale=alt.Scale(domain=["Emissions", "Cost"], range=[color, "#b0bec5"]),
+            legend=alt.Legend(title="Metric Type")
+        ),
+        tooltip=[
+            alt.Tooltip("Month:N"),
+            alt.Tooltip("Metric:N", title="Type"),
+            alt.Tooltip("Value:Q", title="Value", format=",.2f")
+        ],
+    )
+    .interactive()
+    .properties(width=300, height=180, title=title)
+)
 
         # Dynamic monthly summary selector
         month_sel = st.selectbox(f"View details for month ({title})", months, key=f"month_{title}")
