@@ -391,7 +391,11 @@ elif nav=="Scenario Builder":
     import tempfile, os, math
 
     st.markdown("#### 📄 Download Scenario Summary")
-
+include_charts = st.radio(
+    "Include charts in download?",
+    ["✅ Yes (Full Report with Charts)", "📝 No (Text-Only Summary)"],
+    horizontal=True
+)
     # --- Helper function for chart scaling ---
 def draw_chart_centered(c, path, y, page_width, page_height):
     """
