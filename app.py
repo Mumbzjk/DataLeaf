@@ -250,17 +250,17 @@ if nav=="Overview":
 # SCENARIO BUILDER
 # =========================================================
 elif nav=="Scenario Builder":
-    
-   
+  
     st.subheader("Scenario Builder")
-    st.caption("Explore how changes in retrofits, EV adoption, or waste diversion affect Waterloo’s emissions and costs in real time.")
+    st.caption("Simulate how retrofits, EV adoption, and waste diversion impact Waterloo’s emissions and annual operating costs in real time.")
 
+    # --- Sliders ---
     sA, sB, sC = st.columns(3)
     with sA: retrofit = st.slider("Buildings retrofit (%)", 0, 30, 15)
     with sB: ev = st.slider("Fleet EV adoption (%)", 0, 50, 20)
     with sC: diversion = st.slider("Waste diversion (%)", 0, 50, 10)
 
-    # ---------- Baseline and scenario calculations ----------
+    # --- Baseline + Scenario calculations ---
     b_em, f_em, w_em = 840, 420, 30
     b_cost, f_cost, w_cost = 480000, 370000, 27000
 
@@ -272,38 +272,60 @@ elif nav=="Scenario Builder":
     f_cost_s = f_cost * (1 - ev / 100)
     w_cost_s = w_cost * (1 - diversion / 100)
 
-    # ---------- Chart + live summary helper ----------
+    import pandas as pd
+    import altair as alt
+
+    # --- Reusable chart + summary block ---
     def scenario_block(title, em_now, em_new, cost_now, cost_new, color, bg_color):
-        st.markdown(f"### {title}")
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.bar_chart({
-                "Baseline (tCO₂e)": [em_now],
-                "Scenario (tCO₂e)": [em_new]
-            })
-        with col2:
-            diff_em = em_now - em_new
-            diff_cost = cost_now - cost_new
-            st.markdown(f"""
-                <div style='background:{bg_color}; border-left:4px solid {color};
-                padding:8px; border-radius:6px; font-size:0.9em;'>
-                <b>System-Calculated Summary</b><br>
-                ↓ Emission reduction: {diff_em:.1f} tCO₂e<br>
-                💰 Cost savings: ${diff_cost:,.0f}
-                </div>
-            """, unsafe_allow_html=True)
+        st.markdown(f"## {title}")
+        st.caption("Comparing baseline and scenario performance for both emissions (tCO₂e) and costs (thousands CAD).")
 
-    # ---------- Display three scenario sections ----------
-    scenario_block("Buildings", b_em, b_em_s, b_cost, b_cost_s, "#1e6c93", "#e3f2fd")   # Blue
-    scenario_block("Fleet", f_em, f_em_s, f_cost, f_cost_s, "#2e7d32", "#e8f5e9")       # Green
-    scenario_block("Waste", w_em, w_em_s, w_cost, w_cost_s, "#8a5a44", "#f5f0eb")       # Brown
+        # --- Build data frame ---
+        df = pd.DataFrame({
+            "Metric": ["Baseline Emissions", "Scenario Emissions", "Baseline Cost ($000)", "Scenario Cost ($000)"],
+            "Value": [em_now, em_new, cost_now / 1000, cost_new / 1000],
+            "Category": ["Emissions", "Emissions", "Cost", "Cost"]
+        })
 
-    # ---------- Keep existing AI summary + PDF export exactly as before ----------
+        # --- Dual bar chart ---
+        chart = (
+            alt.Chart(df)
+            .mark_bar(size=45)
+            .encode(
+                x=alt.X("Metric:N", sort=None, title=None),
+                y=alt.Y("Value:Q", title="Value"),
+                color=alt.Color("Category:N",
+                                scale=alt.Scale(domain=["Emissions", "Cost"],
+                                                range=[color, "#b0bec5"]),
+                                legend=alt.Legend(title="Category")),
+                tooltip=["Metric", "Value"]
+            )
+            .properties(height=280)
+        )
+        st.altair_chart(chart, use_container_width=True)
+
+        # --- System summary box ---
+        diff_em = em_now - em_new
+        diff_cost = cost_now - cost_new
+        st.markdown(f"""
+            <div style='background:{bg_color}; border-left:4px solid {color};
+            padding:10px; border-radius:6px; font-size:0.9em; margin-top:-8px;'>
+            <b>System-Calculated Summary</b><br>
+            • Emission reduction: {diff_em:.1f} tCO₂e<br>
+            • Estimated cost savings: ${diff_cost:,.0f}<br>
+            <i>Live values update automatically with each slider.</i>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # --- Display scenarios (colour-coordinated) ---
+    scenario_block("🏢 Buildings", b_em, b_em_s, b_cost, b_cost_s, "#1e6c93", "#e3f2fd")   # Blue
+    scenario_block("🚗 Fleet", f_em, f_em_s, f_cost, f_cost_s, "#2e7d32", "#e8f5e9")       # Green
+    scenario_block("♻️ Waste", w_em, w_em_s, w_cost, w_cost_s, "#8a5a44", "#f5f0eb")       # Brown
+
+    # --- Overall AI Summary + PDF Export (keep your existing code below) ---
     st.divider()
     st.markdown("### 🤖 Scenario Summary")
-    # (Leave your existing AI + PDF code here — do not change it)
-
-
+    # (Leave your current AI-generated insight + PDF export code unchanged)
 
 
 # =========================================================
