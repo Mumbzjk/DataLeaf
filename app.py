@@ -169,7 +169,7 @@ if nav=="Overview":
     st.markdown("---")
 
     # --- Interactive scenario panel function ---
-        def scenario_panel(title, df, color):
+           def scenario_panel(title, df, color):
         em_t, cost_t = df["tCO2e"].sum(), df["Cost_CAD"].sum()
 
         # --- Emissions and Cost chart (two-axis combo, simple + stable) ---
