@@ -252,35 +252,6 @@ if nav=="Overview":
 elif nav=="Scenario Builder":
  
     st.subheader("Scenario Builder")
-    ...
-    # ---- Charts + summaries here ----
-    ...
-    # ---- PDF Export (with/without charts) ----
-    from io import BytesIO
-    ...
-    st.markdown("#### 📄 Download Scenario Summary")
-    include_charts = st.radio(
-        "Include charts in download?",
-        ["✅ Yes (Full Report with Charts)", "📝 No (Text-Only Summary)"],
-        horizontal=True
-    )
-
-    if st.button("Generate PDF"):
-        ...
-        st.download_button(
-            "📥 Download Scenario Summary PDF",
-            data=pdf,
-            file_name="Waterloo_Scenario_Summary.pdf",
-            mime="application/pdf"
-        )
-
-# =========================================================
-# FUNDING SECTION STARTS HERE
-# =========================================================
-elif nav=="Funding & Grants":
-    ...
-
-    st.subheader("Scenario Builder")
     st.caption("Simulate how retrofits, EV adoption, and waste diversion affect Waterloo’s emissions and annual operating costs in real time.")
 
     # --- Sliders ---
@@ -420,13 +391,9 @@ elif nav=="Funding & Grants":
     import tempfile, os, math
 
     st.markdown("#### 📄 Download Scenario Summary")
-include_charts = st.radio(
-    "Include charts in download?",
-    ["✅ Yes (Full Report with Charts)", "📝 No (Text-Only Summary)"],
-    horizontal=True
-)
+
     # --- Helper function for chart scaling ---
-def draw_chart_centered(c, path, y, page_width, page_height):
+    def draw_chart_centered(c, path, y, page_width, page_height):
     """
     Dynamically centers and scales chart image on PDF page.
     Automatically adjusts size based on page width and chart resolution.
@@ -463,7 +430,6 @@ def draw_chart_centered(c, path, y, page_width, page_height):
     except Exception as e:
         print(f"Chart draw failed: {e}")
         return y - 20
-
 
 
     # --- Radio button for report type ---
@@ -633,9 +599,9 @@ def draw_chart_centered(c, path, y, page_width, page_height):
 # =========================================================
 # FUNDING & GRANTS — Full Intelligent Funding Centre
 # =========================================================
-    elif nav=="Funding & Grants":
-     st.subheader("Funding & Grants – Smart Funding Centre")
-     st.markdown("_Discover and apply for the most relevant climate and infrastructure programs._")
+elif nav=="Funding & Grants":
+    st.subheader("Funding & Grants – Smart Funding Centre")
+    st.markdown("_Discover and apply for the most relevant climate and infrastructure programs._")
 
     total_em = (bld["tco2e"].sum() + flt["tco2e"].sum() + wst["tco2e"].sum()) or 1.0
     share = {"Buildings": bld["tco2e"].sum()/total_em,
@@ -842,8 +808,8 @@ Program: {p['name']}
 # =========================================================
 # ENGAGEMENT — dropdowns → tailored message side-card
 # =========================================================
-    elif nav=="Engagement":
-     st.subheader("Stakeholder Engagement")
+elif nav=="Engagement":
+    st.subheader("Stakeholder Engagement")
 
     stakeholders = ["Council","Residents","Businesses","City Staff"]
     topics = ["Buildings Retrofit","Fleet Electrification","Waste Diversion","Compliance Update","Pilot Invitation"]
