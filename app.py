@@ -222,11 +222,7 @@ if nav=="Overview":
     with col_f: scenario_panel("🚗 Fleet", df_f, "#2a9d8f")
     with col_w: scenario_panel("♻️ Waste", df_w, "#8a5a44")
 
-    # --- footer note ---
-    st.markdown(
-        "<div style='text-align:center;color:gray;font-size:0.85em;margin-top:10px;'>"
-        "Demo data only · Units indicated on every chart · Costs in CAD · Data Leaf © 2025"
-        "</div>", unsafe_allow_html=True)
+
 
 # =========================================================
 # SCENARIO BUILDER
