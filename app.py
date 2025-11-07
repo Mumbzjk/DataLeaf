@@ -20,27 +20,19 @@ st.set_page_config(page_title="Data Leaf – City of Waterloo Pilot MVP",
                    page_icon=LOGO_URL, layout="wide")
 
 # ----------------- HEADER -----------------
-st.markdown(f"""
+st.markdown("""
 <style>
-.headerbar {{
-  display:flex; align-items:center; gap:18px; margin-top:-10px; margin-bottom:12px;
-}}
-.headerbar img {{
-  width:190px; height:auto; border-radius:14px; object-fit:contain;
-}}
-.headerbar h2 {{
-  margin:0; font-weight:850; color:#1e6c93; font-size:2.2rem;
-}}
-.card {{
-  border:1px solid #e5e7eb; border-radius:14px; padding:16px; background:#ffffff;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-}}
-.smallcap {{color:#6b7280;font-size:0.9rem;}}
+.block-container {
+    padding-top: 0.2rem !important;
+}
+header, .stApp header {
+    visibility: visible !important;
+}
+.headerbar img {
+    max-height: 70px !important;
+}
+div[data-testid="stToolbar"] { display: none !important; }  /* hide dev toolbar */
 </style>
-<div class="headerbar">
-    <img src="{LOGO_URL}" alt="Data Leaf logo">
-    <h2>Data Leaf – City of Waterloo Pilot MVP</h2>
-</div>
 """, unsafe_allow_html=True)
 
 # ----------------- SMART ASSIST (Developer only) -----------------
