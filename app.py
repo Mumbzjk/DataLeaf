@@ -215,7 +215,7 @@ if nav=="Overview":
 
         # AI Summary generation
     key = f"ai_summary_{title}"
-        if key not in st.session_state:
+    if key not in st.session_state:
             st.session_state[key] = None
 
         if st.button(f"Generate AI Summary – {title}", key=f"btn_{title}"):
