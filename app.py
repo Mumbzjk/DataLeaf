@@ -19,7 +19,6 @@ LOGO_URL = "https://thedataleaf.com/wp-content/uploads/2025/09/Untitled-design-1
 st.set_page_config(page_title="Data Leaf – City of Waterloo Pilot MVP",
                    page_icon=LOGO_URL, layout="wide")
 
-# ----------------- HEADER -----------------
 # ----------------- HEADER (fixed logo visibility & layout) -----------------
 st.markdown("""
 <style>
@@ -46,6 +45,13 @@ div[data-testid="stToolbar"] { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
+# --- Explicit header content (logo + title) ---
+st.markdown(f"""
+<div style='display:flex; align-items:center; justify-content:flex-start; gap:10px;'>
+    <img src="{LOGO_URL}" style='height:60px;'>
+    <h2 style='margin:0; color:#1e6c93;'>Data Leaf — City of Waterloo Pilot MVP</h2>
+</div>
+""", unsafe_allow_html=True)
 
 # ----------------- SMART ASSIST (Developer only) -----------------
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
