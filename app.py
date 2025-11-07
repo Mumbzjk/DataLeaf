@@ -127,7 +127,7 @@ grand_t, grand_c = bld_t + flt_t + wst_t, bld_c + flt_c + wst_c
 # =========================================================
 # OVERVIEW — AI-Assisted Snapshot
 # =========================================================
-elif nav=="Overview":
+if nav=="Overview":
     st.markdown("### 🌿 AI-Assisted Overview — City of Waterloo Climate Snapshot")
     st.caption("Instantly see where emissions and costs stand — updated from your data for smarter decisions.")
 
