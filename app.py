@@ -202,7 +202,7 @@ if nav=="Overview":
     month_data = df[df["Month"] == month_sel].iloc[0]
     month_em, month_cost = month_data["tCO2e"], month_data["Cost_CAD"]
 
-        sys_text = (
+    sys_text = (
             f"In **{month_sel}**, {title} recorded {month_em:,.1f} tCO₂e emissions "
             f"and ${month_cost:,.0f} CAD cost — representing {(month_em/df['tCO2e'].sum())*100:.1f}% "
             f"of its annual total."
