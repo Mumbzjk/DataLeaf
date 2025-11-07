@@ -198,9 +198,9 @@ if nav=="Overview":
 
 
         # Dynamic monthly summary selector
-        month_sel = st.selectbox(f"View details for month ({title})", months, key=f"month_{title}")
-        month_data = df[df["Month"] == month_sel].iloc[0]
-        month_em, month_cost = month_data["tCO2e"], month_data["Cost_CAD"]
+    month_sel = st.selectbox(f"View details for month ({title})", months, key=f"month_{title}")
+    month_data = df[df["Month"] == month_sel].iloc[0]
+    month_em, month_cost = month_data["tCO2e"], month_data["Cost_CAD"]
 
         sys_text = (
             f"In **{month_sel}**, {title} recorded {month_em:,.1f} tCO₂e emissions "
