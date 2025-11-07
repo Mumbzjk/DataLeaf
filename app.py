@@ -809,8 +809,8 @@ Program: {p['name']}
 # =========================================================
 # ENGAGEMENT — dropdowns → tailored message side-card
 # =========================================================
-elif nav=="Engagement":
-    st.subheader("Stakeholder Engagement")
+    elif nav=="Engagement":
+     st.subheader("Stakeholder Engagement")
 
     stakeholders = ["Council","Residents","Businesses","City Staff"]
     topics = ["Buildings Retrofit","Fleet Electrification","Waste Diversion","Compliance Update","Pilot Invitation"]
