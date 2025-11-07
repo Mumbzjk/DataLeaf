@@ -279,11 +279,64 @@ elif st.session_state.page == "Funding & Grants":
 # =========================================================
 # ENGAGEMENT
 # =========================================================
-elif st.session_state.page=="Engagement":
+# =========================================================
+# ENGAGEMENT — dropdowns → tailored message side-card
+# =========================================================
+elif nav == "Engagement":
     st.subheader("Stakeholder Engagement")
 
-    stakeholders=["Council","Residents","Businesses","City Staff"]
-    programs=["Buildings Retrofit","Fleet Electrification","Waste Diversion","Compliance Update","Pilot Invitation"]
-    c1,c2=st.columns(2)
-    with c1: who=st.selectbox("Stakeholder",stakeholders)
-    with
+    stakeholders = ["Council","Residents","Businesses","City Staff"]
+    topics = ["Buildings Retrofit","Fleet Electrification","Waste Diversion","Compliance Update","Pilot Invitation"]
+
+    c1, c2 = st.columns(2)
+    with c1:
+        who = st.selectbox("Stakeholder", stakeholders)
+    with c2:
+        topic = st.selectbox("Program / Topic", topics)
+
+    # Tailored messages (neutral tone, concise)
+    base = {
+        ("Council","Buildings Retrofit"): "Targeted retrofits lower utility spend and emissions. Scenario results show meaningful savings with grants improving payback.",
+        ("Council","Fleet Electrification"): "Phased EV adoption for high-usage routes reduces fuel and maintenance costs while improving compliance readiness.",
+        ("Council","Waste Diversion"): "Increased diversion and organics reduce landfill fees and stabilize operating costs.",
+        ("Council","Compliance Update"): "Dashboards consolidate reporting evidence—fewer manual hours and clearer audit trails amid changing rules.",
+        ("Council","Pilot Invitation"): "A focused 3–4 month pilot co-designed with staff delivers measurable outcomes and grant-ready documentation.",
+
+        ("Residents","Buildings Retrofit"): "Improving energy efficiency in community buildings reduces costs and emissions—savings that support local services.",
+        ("Residents","Fleet Electrification"): "Transitioning select city vehicles to electric cuts noise and emissions while saving on fuel.",
+        ("Residents","Waste Diversion"): "Better recycling and organics keep materials out of landfill, reducing costs and climate impact.",
+        ("Residents","Compliance Update"): "The city is tracking progress clearly and transparently with simple, public-friendly summaries.",
+        ("Residents","Pilot Invitation"): "We’re testing practical steps that lower bills and emissions—your feedback helps shape next steps.",
+
+        ("Businesses","Buildings Retrofit"): "Data identifies best-return retrofits; available programs offset upfront cost and reduce total cost of ownership.",
+        ("Businesses","Fleet Electrification"): "EV pilots on predictable routes reduce fuel risk and maintenance downtime.",
+        ("Businesses","Waste Diversion"): "Improved sorting and organics programs reduce fees and streamline operations.",
+        ("Businesses","Compliance Update"): "Clear reporting supports supply-chain and lender requests with investor-grade summaries.",
+        ("Businesses","Pilot Invitation"): "A focused pilot de-risks adoption and demonstrates value quickly.",
+
+        ("City Staff","Buildings Retrofit"): "Upload, track, and visualize facility data—faster reporting, fewer spreadsheets, grant-ready outputs.",
+        ("City Staff","Fleet Electrification"): "Target high-use units first. Scenario sliders quantify emissions and cost impacts instantly.",
+        ("City Staff","Waste Diversion"): "Track streams, quantify landfill fees, and estimate savings from diversion.",
+        ("City Staff","Compliance Update"): "Dashboards map metrics to reporting needs, creating an audit trail for submissions.",
+        ("City Staff","Pilot Invitation"): "Pilot scope is co-designed; you choose the focus while we provide tooling and templates."
+    }
+
+    message = base.get((who, topic),
+        "Data and dashboards make progress visible, reduce manual work, and support funding applications.")
+
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown(f"**To:** {who}  \n**Subject:** {topic}")
+    st.write(message)
+
+    q = urllib.parse.quote(message)
+    st.markdown(
+        f"[LinkedIn](https://linkedin.com/shareArticle?mini=true&url=https://thedataleaf.com&summary={q}) | "
+        f"[𝕏](https://twitter.com/intent/tweet?text={q}) | "
+        f"[Facebook](https://facebook.com/sharer/sharer.php?u=https://thedataleaf.com&quote={q}) | "
+        f"[Email](mailto:?subject={urllib.parse.quote(topic)}&body={q})"
+    )
+    st.caption("Tip: click inside the message and press ⌘/Ctrl + C to copy.")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# =========================================================
+st.caption("Demo data only. Units indicated on every chart. Costs in CAD. Data Leaf © 2025")
