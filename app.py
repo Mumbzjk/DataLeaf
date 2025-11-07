@@ -171,25 +171,31 @@ if nav=="Overview":
     # --- Interactive scenario panel function ---
     def scenario_panel(title, df, color):
         em_t, cost_t = df["tCO2e"].sum(), df["Cost_CAD"].sum()
-# --- Emissions and Cost chart (two-axis combo, simple + stable) ---
-base = alt.Chart(df).encode(x=alt.X("Month", sort=months))
+    # --- Emissions and Cost chart (two-axis combo, simple + stable) ---
+    base = alt.Chart(df).encode(x=alt.X("Month", sort=months))
 
-emissions_line = base.mark_line(color=color, strokeWidth=3).encode(
-    y=alt.Y("tCO2e:Q", title="Emissions (tCO₂e)"),
-    tooltip=[alt.Tooltip("Month"), alt.Tooltip("tCO2e", title="Emissions (tCO₂e)", format=",.1f")]
-)
+    emissions_line = base.mark_line(color=color, strokeWidth=3).encode(
+        y=alt.Y("tCO2e:Q", title="Emissions (tCO₂e)"),
+        tooltip=[
+            alt.Tooltip("Month"),
+            alt.Tooltip("tCO2e", title="Emissions (tCO₂e)", format=",.1f")
+        ]
+    )
 
-cost_bar = base.mark_bar(opacity=0.3, color="#b0bec5").encode(
-    y=alt.Y("Cost_CAD:Q", title="Cost (CAD)"),
-    tooltip=[alt.Tooltip("Cost_CAD", title="Cost (CAD)", format=",.0f")]
-)
+    cost_bar = base.mark_bar(opacity=0.3, color="#b0bec5").encode(
+        y=alt.Y("Cost_CAD:Q", title="Cost (CAD)"),
+        tooltip=[
+            alt.Tooltip("Cost_CAD", title="Cost (CAD)", format=",.0f")
+        ]
+    )
 
-chart = (emissions_line + cost_bar).resolve_scale(y="independent").interactive().properties(
-    width=300, height=180, title=title
-)
+    chart = (emissions_line + cost_bar).resolve_scale(y="independent").interactive().properties(
+        width=300, height=180, title=title
+    )
 
-st.altair_chart(chart, use_container_width=True)
-st.caption(f"Total: {em_t:,.1f} tCO₂e | ${cost_t:,.0f} CAD")
+    st.altair_chart(chart, use_container_width=True)
+    st.caption(f"Total: {em_t:,.1f} tCO₂e | ${cost_t:,.0f} CAD")
+
 
         # Dynamic monthly summary selector
         month_sel = st.selectbox(f"View details for month ({title})", months, key=f"month_{title}")
