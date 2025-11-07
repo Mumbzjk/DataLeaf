@@ -4,3 +4,4 @@ numpy
 altair
 reportlab
 requests
+vl-convert-python
