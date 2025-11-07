@@ -393,7 +393,7 @@ elif nav=="Scenario Builder":
     st.markdown("#### 📄 Download Scenario Summary")
 
     # --- Helper function for chart scaling ---
-        def draw_chart_centered(c, path, y, page_width, page_height):
+def draw_chart_centered(c, path, y, page_width, page_height):
     """
     Dynamically centers and scales chart image on PDF page.
     Automatically adjusts size based on page width and chart resolution.
