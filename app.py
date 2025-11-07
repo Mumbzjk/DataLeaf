@@ -393,44 +393,24 @@ elif nav=="Scenario Builder":
     st.markdown("#### 📄 Download Scenario Summary")
 
     # --- Helper function for chart scaling ---
-    def draw_chart_centered(c, path, y, page_width, page_height):
-    """
-    Dynamically centers and scales chart image on PDF page.
-    Automatically adjusts size based on page width and chart resolution.
-    """
-    try:
-        img = ImageReader(path)
-        iw, ih = img.getSize()  # original image size (pixels)
-        # Convert pixels to PDF points assuming 96 DPI
-        iw_pt = iw * 72.0 / 96.0
-        ih_pt = ih * 72.0 / 96.0
-
-        # Target width: 65% of page width (dynamic)
-        target_width = page_width * 0.65
-        if iw_pt > target_width:
-            scale = target_width / iw_pt
-        else:
-            scale = 1.0  # if already smaller, keep original
-
-        new_width = iw_pt * scale
-        new_height = ih_pt * scale
-
-        # Center horizontally
-        x_center = (page_width - new_width) / 2
-
-        # Page overflow check
-        if y - new_height < 100:
-            c.showPage()
-            y = page_height - 70
-
-        c.drawImage(img, x_center, y - new_height,
-                    width=new_width, height=new_height)
-        y -= new_height + 20
-        return y
-    except Exception as e:
-        print(f"Chart draw failed: {e}")
-        return y - 20
-
+    def draw_chart_centered(c, path, y, page_width, page_height, max_width=170):
+        """Draws chart proportionally centered on the PDF."""
+        try:
+            img = ImageReader(path)
+            iw, ih = img.getSize()
+            aspect = ih / float(iw)
+            new_height = max_width * aspect
+            if y - new_height < 100:
+                c.showPage()
+                y = page_height - 70
+            x_center = (page_width - max_width) / 2
+            c.drawImage(img, x_center, y - new_height,
+                        width=max_width, height=new_height)
+            y -= new_height + 20
+            return y
+        except Exception as e:
+            print(f"Chart draw failed: {e}")
+            return y - 20
 
     # --- Radio button for report type ---
     include_charts = st.radio(
