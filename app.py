@@ -124,29 +124,28 @@ grand_t, grand_c = bld_t + flt_t + wst_t, bld_c + flt_c + wst_c
 # =========================================================
 # OVERVIEW
 # =========================================================
-# OVERVIEW — Interactive + AI + System Summaries
+# OVERVIEW — AI-Assisted Snapshot (Final Revision)
+# =========================================================
+# =========================================================
+# OVERVIEW — Scenario-specific System + AI Summaries
 # =========================================================
 if nav=="Overview":
+    # --- reduce top whitespace ---
+    st.markdown(
+        "<style>.block-container{padding-top:1rem!important;}</style>",
+        unsafe_allow_html=True)
 
-    # --- Hide Streamlit header & adjust top spacing ---
-    st.markdown("""
-        <style>
-        header {visibility: hidden;}
-        .block-container {padding-top: 0.5rem !important;}
-        </style>
-    """, unsafe_allow_html=True)
+    st.markdown("### AI-Assisted Overview — City of Waterloo Climate Snapshot")
+    st.caption("Instantly see where emissions and costs stand. Updated from your data for smarter, faster decisions.")
 
-    st.markdown("### 🌿 AI-Assisted Overview — City of Waterloo Climate Snapshot")
-    st.caption("Instantly see where emissions and costs stand — updated from your data for smarter, faster decisions.")
-
-    # --- View Mode toggle ---
+    # --- Monthly / Annual toggle ---
     view_mode = st.radio("View Mode", ["Monthly", "Annual"], horizontal=True, index=0)
     is_monthly = (view_mode == "Monthly")
 
-    import pandas as pd, numpy as np, altair as alt, requests
+    import pandas as pd, numpy as np, altair as alt
     months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
 
-    # --- Synthetic demo data ---
+    # --- synthetic demo data ---
     b_em = np.random.uniform(80,120,12)
     f_em = np.random.uniform(35,60,12)
     w_em = np.random.uniform(5,12,12)
@@ -154,7 +153,7 @@ if nav=="Overview":
     df_f = pd.DataFrame({"Month":months,"tCO2e":f_em,"Cost_CAD":f_em*720})
     df_w = pd.DataFrame({"Month":months,"tCO2e":w_em,"Cost_CAD":w_em*400})
 
-    # --- Totals and KPI cards ---
+    # --- totals & KPIs ---
     b_t, f_t, w_t = df_b["tCO2e"].sum(), df_f["tCO2e"].sum(), df_w["tCO2e"].sum()
     total_em = b_t + f_t + w_t
     total_cost = df_b["Cost_CAD"].sum() + df_f["Cost_CAD"].sum() + df_w["Cost_CAD"].sum()
@@ -168,83 +167,64 @@ if nav=="Overview":
 
     st.markdown("---")
 
-    # --- Interactive scenario panel function ---
+    # --- helper to build each scenario panel ---
+    import requests
     def scenario_panel(title, df, color):
         em_t, cost_t = df["tCO2e"].sum(), df["Cost_CAD"].sum()
-
-        # Interactive graph (hover + zoom)
-        chart = alt.Chart(df).transform_fold(
-            ["Emissions (tCO₂e)", "Cost ($CAD)"], as_=["Metric", "Value"]
-        ).mark_line(interpolate="monotone", point=True).encode(
+        chart = alt.Chart(df).mark_line(interpolate="monotone", point=True, color=color).encode(
             x=alt.X("Month", sort=months),
-            y=alt.Y("Value:Q", title=None),
-            color=alt.Color("Metric:N", scale=alt.Scale(
-                domain=["Emissions (tCO₂e)", "Cost ($CAD)"],
-                range=[color, "#b0bec5"])),
-            tooltip=["Month", "Metric", alt.Tooltip("Value:Q", format=",.2f")]
-        ).interactive().properties(width=300, height=180, title=title)
-
-        st.altair_chart(chart, use_container_width=True)
+            y=alt.Y("tCO2e", title="Emissions (tCO₂e)"),
+            tooltip=["Month","tCO2e","Cost_CAD"]).properties(width=300,height=180)
+        bars = alt.Chart(df).mark_bar(opacity=0.25,color=color).encode(
+            x=alt.X("Month", sort=months),
+            y=alt.Y("Cost_CAD", title="Cost ($CAD)"))
+        st.markdown(f"#### {title}")
+        st.altair_chart(alt.layer(bars,chart).resolve_scale(y="independent"),use_container_width=True)
         st.caption(f"Total: {em_t:,.1f} tCO₂e | ${cost_t:,.0f} CAD")
 
-        # Dynamic monthly summary selector
-        month_sel = st.selectbox(f"View details for month ({title})", months, key=f"month_{title}")
-        month_data = df[df["Month"] == month_sel].iloc[0]
-        month_em, month_cost = month_data["tCO2e"], month_data["Cost_CAD"]
-
-        sys_text = (
-            f"In **{month_sel}**, {title} recorded {month_em:,.1f} tCO₂e emissions "
-            f"and ${month_cost:,.0f} CAD cost — representing {(month_em/df['tCO2e'].sum())*100:.1f}% "
-            f"of its annual total."
-        )
+        # --- system summary ---
+        sys_text = (f"System-Generated Summary: {title} accounts for {(em_t/total_em)*100:.1f}% "
+                    f"of total emissions with annual cost ≈ ${cost_t:,.0f} CAD.")
         st.markdown(
             f"<div style='background:#E3F2FD;border-left:6px solid {color};"
             "padding:10px;border-radius:6px;margin-top:8px;'>"
-            f"<strong style='color:{color};'>🧮 System-Generated Summary:</strong><br>{sys_text}</div>",
+            f"<strong style='color:{color};'>🧮 {sys_text}</strong></div>",
             unsafe_allow_html=True)
 
-        # AI Summary generation
-        key = f"ai_summary_{title}"
-        if key not in st.session_state:
-            st.session_state[key] = None
-
+        # --- AI summary ---
+        key=f"ai_summary_{title}"
+        if key not in st.session_state: st.session_state[key]=None
         if st.button(f"Generate AI Summary – {title}", key=f"btn_{title}"):
-            prompt = (
-                f"Provide a 3-sentence AI summary for {title.lower()} in {month_sel}, "
-                f"with {month_em:,.1f} tCO₂e emissions and ${month_cost:,.0f} CAD cost. "
-                "Explain briefly how these figures compare to other months and suggest one actionable insight."
-            )
+            prompt=(f"Write a 3-sentence plain summary for {title.lower()} "
+                    f"showing {em_t:,.1f} tCO₂e and ${cost_t:,.0f} CAD cost this {period_label.lower()}. "
+                    "Mention trends and improvement opportunities.")
             try:
-                r = requests.post(
-                    "https://api.openai.com/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {OPENAI_API_KEY}",
-                             "Content-Type": "application/json"},
-                    json={"model": "gpt-4o-mini",
-                          "messages": [{"role": "user", "content": prompt}]})
-                st.session_state[key] = r.json()["choices"][0]["message"]["content"]
+                r=requests.post("https://api.openai.com/v1/chat/completions",
+                    headers={"Authorization":f"Bearer {OPENAI_API_KEY}",
+                             "Content-Type":"application/json"},
+                    json={"model":"gpt-4o-mini",
+                          "messages":[{"role":"user","content":prompt}]})
+                st.session_state[key]=r.json()["choices"][0]["message"]["content"]
             except Exception as e:
                 st.error(f"AI summary failed: {e}")
 
         if st.session_state[key]:
             st.markdown(
-                "<div style='background:#E8F5E9;border-left:6px solid #2E7D32;"
+                f"<div style='background:#E8F5E9;border-left:6px solid #2E7D32;"
                 "padding:10px;border-radius:6px;margin-top:6px;'>"
-                "<strong style='color:#2E7D32;'>🤖 AI-Generated Summary:</strong><br>"
+                f"<strong style='color:#2E7D32;'>🤖 AI-Generated Summary:</strong><br>"
                 f"{st.session_state[key]}</div>",
                 unsafe_allow_html=True)
 
-    # --- Display three scenarios horizontally ---
-    col_b, col_f, col_w = st.columns(3)
+    # --- display three scenarios horizontally ---
+    col_b,col_f,col_w=st.columns(3)
     with col_b: scenario_panel("🏢 Buildings", df_b, "#1e6c93")
     with col_f: scenario_panel("🚗 Fleet", df_f, "#2a9d8f")
     with col_w: scenario_panel("♻️ Waste", df_w, "#8a5a44")
 
-    # --- Footer ---
-    st.markdown(
-        "<div style='text-align:center;color:gray;font-size:0.85em;margin-top:10px;'>"
-        "Demo data only · Units indicated on every chart · Costs in CAD · Data Leaf © 2025"
-        "</div>", unsafe_allow_html=True)
 
+
+# =========================================================
 # SCENARIO BUILDER
 # =========================================================
 elif nav=="Scenario Builder":
