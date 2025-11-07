@@ -46,10 +46,16 @@ div[data-testid="stToolbar"] { display: none !important; }
 """, unsafe_allow_html=True)
 
 # --- Explicit header content (logo + title) ---
+# --- Refined header (large logo + compact title) ---
 st.markdown(f"""
-<div style='display:flex; align-items:center; justify-content:flex-start; gap:10px;'>
-    <img src="{LOGO_URL}" style='height:60px;'>
-    <h2 style='margin:0; color:#1e6c93;'>Data Leaf — City of Waterloo Pilot MVP</h2>
+<div style='display:flex; align-items:center; justify-content:flex-start;
+            gap:18px; padding:0.4rem 0 0.8rem 0;'>
+    <img src="{LOGO_URL}" style='height:95px; width:auto; flex-shrink:0;
+             border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.15);'>
+    <h3 style='margin:0; color:#1e6c93; font-size:1.25rem; font-weight:600;
+               line-height:1.3; white-space:normal; max-width:500px;'>
+        Data Leaf — City of Waterloo Pilot MVP
+    </h3>
 </div>
 """, unsafe_allow_html=True)
 
