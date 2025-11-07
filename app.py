@@ -601,8 +601,8 @@ def draw_chart_centered(c, path, y, page_width, page_height):
 # FUNDING & GRANTS — Full Intelligent Funding Centre
 # =========================================================
     elif nav=="Funding & Grants":
-    st.subheader("Funding & Grants – Smart Funding Centre")
-    st.markdown("_Discover and apply for the most relevant climate and infrastructure programs._")
+     st.subheader("Funding & Grants – Smart Funding Centre")
+     st.markdown("_Discover and apply for the most relevant climate and infrastructure programs._")
 
     total_em = (bld["tco2e"].sum() + flt["tco2e"].sum() + wst["tco2e"].sum()) or 1.0
     share = {"Buildings": bld["tco2e"].sum()/total_em,
