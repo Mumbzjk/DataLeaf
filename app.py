@@ -382,7 +382,7 @@ elif nav=="Scenario Builder":
     """, unsafe_allow_html=True)
 
     # --- PDF Export ---
-              # --- PDF Export (with toggle for charts) ---
+                 # --- PDF Export (Clean Scaling + Option for Charts) ---
     from io import BytesIO
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen import canvas
@@ -392,6 +392,27 @@ elif nav=="Scenario Builder":
 
     st.markdown("#### 📄 Download Scenario Summary")
 
+    # --- Helper function for chart scaling ---
+    def draw_chart_centered(c, path, y, page_width, page_height, max_width=340):
+        """Draws chart proportionally centered on the PDF."""
+        try:
+            img = ImageReader(path)
+            iw, ih = img.getSize()
+            aspect = ih / float(iw)
+            new_height = max_width * aspect
+            if y - new_height < 100:
+                c.showPage()
+                y = page_height - 70
+            x_center = (page_width - max_width) / 2
+            c.drawImage(img, x_center, y - new_height,
+                        width=max_width, height=new_height)
+            y -= new_height + 20
+            return y
+        except Exception as e:
+            print(f"Chart draw failed: {e}")
+            return y - 20
+
+    # --- Radio button for report type ---
     include_charts = st.radio(
         "Include charts in download?",
         ["✅ Yes (Full Report with Charts)", "📝 No (Text-Only Summary)"],
@@ -402,13 +423,13 @@ elif nav=="Scenario Builder":
         temp_dir = tempfile.mkdtemp()
 
         # --- Chart export helper (only if selected) ---
-        def save_chart_as_png(chart, filename, scale=2):
+        def save_chart_as_png(chart, filename, scale=3):
             path = os.path.join(temp_dir, filename)
             chart.save(path, format="png", scale_factor=scale)
             return path
 
         chart_paths = []
-        if "Charts" in include_charts or "Yes" in include_charts:
+        if "Yes" in include_charts:
             chart_paths = [
                 save_chart_as_png(
                     alt.Chart(pd.DataFrame({
@@ -467,7 +488,7 @@ elif nav=="Scenario Builder":
         c.drawString(190, y - 20, "City of Waterloo – Scenario Summary")
         y -= 70
 
-        # Sliders summary
+        # Slider summary
         c.setFont("Helvetica", 11)
         for line in [
             f"Buildings retrofit: {retrofit}%",
@@ -476,7 +497,7 @@ elif nav=="Scenario Builder":
         ]:
             c.drawString(50, y, line)
             y -= 15
-        y -= 15
+        y -= 10
 
         # Scenario sections
         scenarios = [
@@ -494,20 +515,9 @@ elif nav=="Scenario Builder":
             c.drawString(50, y, f"{name} Scenario")
             y -= 10
 
-            # Embed chart if chosen
+            # Draw chart proportionally centered
             if chart_paths:
-                try:
-                    img = ImageReader(chart_paths[idx])
-                    iw, ih = img.getSize()
-                    aspect = ih / float(iw)
-                    new_width = 340
-                    new_height = math.floor(new_width * aspect)
-                    if y - new_height < 100:
-                        c.showPage(); y = height - 70
-                    c.drawImage(img, 60, y - new_height, width=new_width, height=new_height)
-                    y -= new_height + 10
-                except Exception:
-                    y -= 15
+                y = draw_chart_centered(c, chart_paths[idx], y, width, height, max_width=340)
 
             c.setFont("Helvetica", 10)
             lines = [
@@ -520,7 +530,8 @@ elif nav=="Scenario Builder":
             y -= 10
 
             if y < 150:
-                c.showPage(); y = height - 70
+                c.showPage()
+                y = height - 70
 
         # AI summary
         if st.session_state.ai_summary:
@@ -530,7 +541,9 @@ elif nav=="Scenario Builder":
             c.setFont("Helvetica", 10)
             for line in wrap(st.session_state.ai_summary, 90):
                 if y < 100:
-                    c.showPage(); y = height - 70; c.setFont("Helvetica", 10)
+                    c.showPage()
+                    y = height - 70
+                    c.setFont("Helvetica", 10)
                 c.drawString(60, y, line)
                 y -= 13
             y -= 10
@@ -542,7 +555,9 @@ elif nav=="Scenario Builder":
         c.setFont("Helvetica", 10)
         for line in wrap(fallback_text, 90):
             if y < 100:
-                c.showPage(); y = height - 70; c.setFont("Helvetica", 10)
+                c.showPage()
+                y = height - 70
+                c.setFont("Helvetica", 10)
             c.drawString(60, y, line)
             y -= 13
 
@@ -560,7 +575,6 @@ elif nav=="Scenario Builder":
             file_name="Waterloo_Scenario_Summary.pdf",
             mime="application/pdf"
         )
-
 
 # =========================================================
 # FUNDING & GRANTS — Full Intelligent Funding Centre
