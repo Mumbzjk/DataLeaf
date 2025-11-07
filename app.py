@@ -224,8 +224,27 @@ elif st.session_state.page == "Funding & Grants":
         if "Adaptation" in p["focus"]: base += 0.1
         match_pct = int(round(min(0.95, max(0.15, base)) * 100))
         rows.append({"Program": f"[{p['name']}]({p['link']})","Amount":p["amount"],"Match %":f"{match_pct}%","Deadline":p["deadline"]})
+# Create a clean, clickable funding table (no raw HTML or repetition)
+funding_df = pd.DataFrame(rows)
 
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+def make_clickable(val):
+    """Turn markdown link into an HTML hyperlink that opens in a new tab."""
+    if "](" in val:  # Markdown link pattern
+        label = val.split("](")[0].replace("[", "")
+        url = val.split("](")[1].replace(")", "")
+        return f'<a href="{url}" target="_blank" style="text-decoration:none; color:#1e6c93; font-weight:600;">{label}</a>'
+    return val
+
+funding_df["Program"] = funding_df["Program"].apply(make_clickable)
+
+# Display as HTML so the links stay clickable
+st.write(
+    funding_df.to_html(escape=False, index=False),
+    unsafe_allow_html=True
+)
+
+st.caption("_Click any program name to open the official page._")
+
     st.caption("_Click any program name to open the official page._")
 
     st.markdown("### Explore Program Summaries")
