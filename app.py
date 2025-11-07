@@ -207,7 +207,7 @@ if nav=="Overview":
             f"and ${month_cost:,.0f} CAD cost — representing {(month_em/df['tCO2e'].sum())*100:.1f}% "
             f"of its annual total."
         )
-        st.markdown(
+     st.markdown(
             f"<div style='background:#E3F2FD;border-left:6px solid {color};"
             "padding:10px;border-radius:6px;margin-top:8px;'>"
             f"<strong style='color:{color};'>🧮 System-Generated Summary:</strong><br>{sys_text}</div>",
