@@ -129,7 +129,7 @@ grand_t, grand_c = bld_t + flt_t + wst_t, bld_c + flt_c + wst_c
 # =========================================================
 # OVERVIEW — Scenario-specific System + AI Summaries
 # =========================================================
-elif nav=="Overview":
+if nav=="Overview":
     # --- reduce top whitespace ---
     st.markdown(
         "<style>.block-container{padding-top:1rem!important;}</style>",
