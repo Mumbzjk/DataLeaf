@@ -600,7 +600,7 @@ def draw_chart_centered(c, path, y, page_width, page_height):
 # =========================================================
 # FUNDING & GRANTS — Full Intelligent Funding Centre
 # =========================================================
-elif nav=="Funding & Grants":
+    elif nav=="Funding & Grants":
     st.subheader("Funding & Grants – Smart Funding Centre")
     st.markdown("_Discover and apply for the most relevant climate and infrastructure programs._")
 
