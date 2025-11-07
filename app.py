@@ -285,10 +285,15 @@ elif nav=="Scenario Builder":
     with c1: chart_block("Buildings", b_em, b_em_s, b_cost, b_cost_s, "#1e6c93", "#9ecae1")
     with c2: chart_block("Fleet", f_em, f_em_s, f_cost, f_cost_s, "#2a9d8f", "#9fdacb")
     with c3: chart_block("Waste", w_em, w_em_s, w_cost, w_cost_s, "#8a5a44", "#d6b7a6")
+    # -------------------- AI Summary + Fallback (Styled + PDF Export) --------------------
+    from io import BytesIO
+    from reportlab.lib.pagesizes import letter
+    from reportlab.pdfgen import canvas
 
-        # -------------------- AI Summary + Fallback --------------------
     st.divider()
     st.markdown("### 🤖 Scenario Summary")
+
+    ai_summary = None  # placeholder
 
     if st.button("Generate AI Summary"):
         if OPENAI_API_KEY:
@@ -309,21 +314,86 @@ elif nav=="Scenario Builder":
                     json={"model": "gpt-4o-mini",
                           "messages": [{"role": "user", "content": prompt}]})
                 ai_summary = r.json()["choices"][0]["message"]["content"]
-                st.markdown("<div class='card'>", unsafe_allow_html=True)
-                st.success("AI-Generated Summary:")
+
+                st.markdown("""
+                    <div style='background:#e8f5e9; border-left:6px solid #2e7d32;
+                    padding:14px; border-radius:8px; margin-bottom:10px;'>
+                    <strong style='color:#2e7d32;'>AI-Generated Insight:</strong><br>
+                """, unsafe_allow_html=True)
                 st.write(ai_summary)
                 st.markdown("</div>", unsafe_allow_html=True)
+
             except Exception as e:
                 st.error(f"AI summary request failed: {e}")
         else:
             st.warning("OpenAI key not found – showing fallback summary instead.")
 
-    # --- Hybrid fallback summary (auto if AI not run) ---
+    # --- Always show fallback data summary ---
     reduction = (1 - (b_em_s + f_em_s + w_em_s) / (b_em + f_em + w_em)) * 100
     savings = (b_cost + f_cost + w_cost) - (b_cost_s + f_cost_s + w_cost_s)
-    st.info(f"**Fallback Summary:** Estimated emissions reduction of {reduction:.1f}% "
-            f"and cost savings around ${savings:,.0f}. "
-            "This scenario supports Waterloo’s compliance readiness and demonstrates measurable progress.")
+
+    fallback_text = (
+        f"Estimated emissions reduction of {reduction:.1f}% "
+        f"and cost savings around ${savings:,.0f}. "
+        "This scenario supports Waterloo’s compliance readiness "
+        "and demonstrates measurable progress."
+    )
+
+    st.markdown(f"""
+        <div style='background:#e3f2fd; border-left:6px solid #1e6c93;
+        padding:14px; border-radius:8px;'>
+        <strong style='color:#1e6c93;'>System-Calculated Summary:</strong><br>
+        {fallback_text}
+        </div>
+    """, unsafe_allow_html=True)
+
+    # -------------------- PDF Export --------------------
+    st.markdown("#### 📄 Download Scenario Summary")
+
+    if st.button("Generate PDF"):
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=letter)
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(60, 750, "City of Waterloo – Scenario Summary")
+        c.setFont("Helvetica", 11)
+        y = 720
+
+        c.drawString(60, y, f"Buildings retrofit: {retrofit}%")
+        y -= 15
+        c.drawString(60, y, f"Fleet EV adoption: {ev}%")
+        y -= 15
+        c.drawString(60, y, f"Waste diversion: {diversion}%")
+        y -= 25
+
+        if ai_summary:
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(60, y, "AI-Generated Insight:")
+            y -= 15
+            c.setFont("Helvetica", 10)
+            for line in ai_summary.split(". "):
+                c.drawString(60, y, line.strip() + ".")
+                y -= 14
+
+        y -= 10
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(60, y, "System-Calculated Summary:")
+        y -= 15
+        c.setFont("Helvetica", 10)
+        for line in fallback_text.split(". "):
+            c.drawString(60, y, line.strip() + ".")
+            y -= 14
+
+        c.save()
+        pdf = buffer.getvalue()
+        buffer.close()
+
+        st.download_button(
+            label="📥 Download PDF",
+            data=pdf,
+            file_name="Waterloo_Scenario_Summary.pdf",
+            mime="application/pdf"
+        )
+
 
 
 # =========================================================
