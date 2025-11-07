@@ -169,53 +169,54 @@ if nav=="Overview":
     st.markdown("---")
 
     # --- Interactive scenario panel function ---
-    def scenario_panel(title, df, color):
+        def scenario_panel(title, df, color):
         em_t, cost_t = df["tCO2e"].sum(), df["Cost_CAD"].sum()
-    # --- Emissions and Cost chart (two-axis combo, simple + stable) ---
-    base = alt.Chart(df).encode(x=alt.X("Month", sort=months))
 
-    emissions_line = base.mark_line(color=color, strokeWidth=3).encode(
-        y=alt.Y("tCO2e:Q", title="Emissions (tCO₂e)"),
-        tooltip=[
-            alt.Tooltip("Month"),
-            alt.Tooltip("tCO2e", title="Emissions (tCO₂e)", format=",.1f")
-        ]
-    )
+        # --- Emissions and Cost chart (two-axis combo, simple + stable) ---
+        base = alt.Chart(df).encode(x=alt.X("Month", sort=months))
 
-    cost_bar = base.mark_bar(opacity=0.3, color="#b0bec5").encode(
-        y=alt.Y("Cost_CAD:Q", title="Cost (CAD)"),
-        tooltip=[
-            alt.Tooltip("Cost_CAD", title="Cost (CAD)", format=",.0f")
-        ]
-    )
-
-    chart = (emissions_line + cost_bar).resolve_scale(y="independent").interactive().properties(
-        width=300, height=180, title=title
-    )
-
-    st.altair_chart(chart, use_container_width=True)
-    st.caption(f"Total: {em_t:,.1f} tCO₂e | ${cost_t:,.0f} CAD")
-
-
-        # Dynamic monthly summary selector
-    month_sel = st.selectbox(f"View details for month ({title})", months, key=f"month_{title}")
-    month_data = df[df["Month"] == month_sel].iloc[0]
-    month_em, month_cost = month_data["tCO2e"], month_data["Cost_CAD"]
-
-    sys_text = (
-            f"In **{month_sel}**, {title} recorded {month_em:,.1f} tCO₂e emissions "
-            f"and ${month_cost:,.0f} CAD cost — representing {(month_em/df['tCO2e'].sum())*100:.1f}% "
-            f"of its annual total."
+        emissions_line = base.mark_line(color=color, strokeWidth=3).encode(
+            y=alt.Y("tCO2e:Q", title="Emissions (tCO₂e)"),
+            tooltip=[
+                alt.Tooltip("Month"),
+                alt.Tooltip("tCO2e", title="Emissions (tCO₂e)", format=",.1f")
+            ]
         )
-    st.markdown(
+
+        cost_bar = base.mark_bar(opacity=0.3, color="#b0bec5").encode(
+            y=alt.Y("Cost_CAD:Q", title="Cost (CAD)"),
+            tooltip=[
+                alt.Tooltip("Cost_CAD", title="Cost (CAD)", format=",.0f")
+            ]
+        )
+
+        chart = (emissions_line + cost_bar).resolve_scale(y="independent").interactive().properties(
+            width=300, height=180, title=title
+        )
+
+        st.altair_chart(chart, use_container_width=True)
+        st.caption(f"Total: {em_t:,.1f} tCO₂e | ${cost_t:,.0f} CAD")
+
+        # --- Dynamic monthly summary selector ---
+        month_sel = st.selectbox(f"View details for month ({title})", months, key=f"month_{title}")
+        month_data = df[df["Month"] == month_sel].iloc[0]
+        month_em, month_cost = month_data["tCO2e"], month_data["Cost_CAD"]
+
+        sys_text = (
+            f"In **{month_sel}**, {title} recorded {month_em:,.1f} tCO₂e emissions "
+            f"and ${month_cost:,.0f} CAD cost — representing "
+            f"{(month_em / df['tCO2e'].sum()) * 100:.1f}% of its annual total."
+        )
+        st.markdown(
             f"<div style='background:#E3F2FD;border-left:6px solid {color};"
             "padding:10px;border-radius:6px;margin-top:8px;'>"
             f"<strong style='color:{color};'>🧮 System-Generated Summary:</strong><br>{sys_text}</div>",
-            unsafe_allow_html=True)
+            unsafe_allow_html=True
+        )
 
-        # AI Summary generation
-    key = f"ai_summary_{title}"
-    if key not in st.session_state:
+        # --- AI Summary generation ---
+        key = f"ai_summary_{title}"
+        if key not in st.session_state:
             st.session_state[key] = None
 
         if st.button(f"Generate AI Summary – {title}", key=f"btn_{title}"):
@@ -230,7 +231,8 @@ if nav=="Overview":
                     headers={"Authorization": f"Bearer {OPENAI_API_KEY}",
                              "Content-Type": "application/json"},
                     json={"model": "gpt-4o-mini",
-                          "messages": [{"role": "user", "content": prompt}]})
+                          "messages": [{"role": "user", "content": prompt}]}
+                )
                 st.session_state[key] = r.json()["choices"][0]["message"]["content"]
             except Exception as e:
                 st.error(f"AI summary failed: {e}")
@@ -241,7 +243,9 @@ if nav=="Overview":
                 "padding:10px;border-radius:6px;margin-top:6px;'>"
                 "<strong style='color:#2E7D32;'>🤖 AI-Generated Summary:</strong><br>"
                 f"{st.session_state[key]}</div>",
-                unsafe_allow_html=True)
+                unsafe_allow_html=True
+            )
+
 
     # --- Display three scenarios horizontally ---
     col_b, col_f, col_w = st.columns(3)
