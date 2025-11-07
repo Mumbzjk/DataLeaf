@@ -382,26 +382,27 @@ elif nav=="Scenario Builder":
     """, unsafe_allow_html=True)
 
     # --- PDF Export ---
-          # --- PDF Export ---
+            # --- PDF Export ---
     from io import BytesIO
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen import canvas
     from reportlab.lib.utils import ImageReader
     from textwrap import wrap
     import tempfile, os
+    import math
 
-    st.markdown("#### 📄 Download Scenario Summary (with Charts)")
+    st.markdown("#### 📄 Download Scenario Summary (with Clear Charts)")
 
     if st.button("Generate PDF"):
-        # --- Create temporary files for charts ---
         temp_dir = tempfile.mkdtemp()
 
-        def save_chart_as_png(chart, filename):
+        def save_chart_as_png(chart, filename, scale=3):
+            """Save chart as high-res PNG and return its path"""
             path = os.path.join(temp_dir, filename)
-            chart.save(path, format="png", scale_factor=2)
+            chart.save(path, format="png", scale_factor=scale)
             return path
 
-        # Re-create charts for PNG export
+        # --- Build and export charts ---
         charts = []
         charts.append(save_chart_as_png(
             alt.Chart(pd.DataFrame({
@@ -409,9 +410,11 @@ elif nav=="Scenario Builder":
                 "Value": [b_em, b_em_s, b_cost/1000, b_cost_s/1000],
                 "Category": ["Emissions", "Emissions", "Cost", "Cost"]
             }))
-            .mark_bar(size=40)
-            .encode(x="Metric", y="Value", color=alt.Color("Category:N",
-                    scale=alt.Scale(domain=["Emissions", "Cost"], range=["#1e6c93", "#b0bec5"]))),
+            .mark_bar(size=45)
+            .encode(x="Metric", y="Value",
+                    color=alt.Color("Category:N",
+                                    scale=alt.Scale(domain=["Emissions", "Cost"],
+                                                    range=["#1e6c93", "#b0bec5"]))),
             "buildings_chart.png"))
 
         charts.append(save_chart_as_png(
@@ -420,9 +423,11 @@ elif nav=="Scenario Builder":
                 "Value": [f_em, f_em_s, f_cost/1000, f_cost_s/1000],
                 "Category": ["Emissions", "Emissions", "Cost", "Cost"]
             }))
-            .mark_bar(size=40)
-            .encode(x="Metric", y="Value", color=alt.Color("Category:N",
-                    scale=alt.Scale(domain=["Emissions", "Cost"], range=["#2e7d32", "#b0bec5"]))),
+            .mark_bar(size=45)
+            .encode(x="Metric", y="Value",
+                    color=alt.Color("Category:N",
+                                    scale=alt.Scale(domain=["Emissions", "Cost"],
+                                                    range=["#2e7d32", "#b0bec5"]))),
             "fleet_chart.png"))
 
         charts.append(save_chart_as_png(
@@ -431,18 +436,20 @@ elif nav=="Scenario Builder":
                 "Value": [w_em, w_em_s, w_cost/1000, w_cost_s/1000],
                 "Category": ["Emissions", "Emissions", "Cost", "Cost"]
             }))
-            .mark_bar(size=40)
-            .encode(x="Metric", y="Value", color=alt.Color("Category:N",
-                    scale=alt.Scale(domain=["Emissions", "Cost"], range=["#8a5a44", "#b0bec5"]))),
+            .mark_bar(size=45)
+            .encode(x="Metric", y="Value",
+                    color=alt.Color("Category:N",
+                                    scale=alt.Scale(domain=["Emissions", "Cost"],
+                                                    range=["#8a5a44", "#b0bec5"]))),
             "waste_chart.png"))
 
         # --- Start PDF ---
         buffer = BytesIO()
         c = canvas.Canvas(buffer, pagesize=letter)
         width, height = letter
-        y = height - 50
+        y = height - 60
 
-        # Logo + title
+        # --- Logo + Title ---
         try:
             logo_url = "https://thedataleaf.com/wp-content/uploads/2025/09/Untitled-design-10-1.png"
             logo_img = ImageReader(logo_url)
@@ -453,7 +460,7 @@ elif nav=="Scenario Builder":
         c.drawString(190, y - 20, "City of Waterloo – Scenario Summary")
         y -= 70
 
-        # Slider settings
+        # --- Sliders summary ---
         c.setFont("Helvetica", 11)
         for line in [
             f"Buildings retrofit: {retrofit}%",
@@ -462,9 +469,9 @@ elif nav=="Scenario Builder":
         ]:
             c.drawString(50, y, line)
             y -= 15
-        y -= 10
+        y -= 15
 
-        # --- Insert each scenario chart + summary ---
+        # --- Each Scenario Section ---
         scenarios = [
             ("Buildings", charts[0], b_em, b_em_s, b_cost, b_cost_s, "#1e6c93"),
             ("Fleet", charts[1], f_em, f_em_s, f_cost, f_cost_s, "#2e7d32"),
@@ -479,9 +486,17 @@ elif nav=="Scenario Builder":
             c.setFillColorRGB(0, 0, 0)
             c.drawString(50, y, f"{name} Scenario")
             y -= 10
+
             try:
-                c.drawImage(chart_path, 60, y - 150, width=450, height=120)
-                y -= 140
+                img = ImageReader(chart_path)
+                iw, ih = img.getSize()
+                aspect = ih / float(iw)
+                new_width = 460
+                new_height = math.floor(new_width * aspect)
+                if y - new_height < 100:
+                    c.showPage(); y = height - 70
+                c.drawImage(img, 60, y - new_height, width=new_width, height=new_height)
+                y -= new_height + 10
             except Exception:
                 y -= 20
 
@@ -495,11 +510,10 @@ elif nav=="Scenario Builder":
                 y -= 13
             y -= 10
 
-            if y < 120:
-                c.showPage()
-                y = height - 70
+            if y < 150:
+                c.showPage(); y = height - 70
 
-        # --- AI & overall summaries ---
+        # --- AI Summary ---
         if st.session_state.ai_summary:
             c.setFont("Helvetica-Bold", 12)
             c.drawString(50, y, "AI-Generated Insight:")
@@ -512,6 +526,7 @@ elif nav=="Scenario Builder":
                 y -= 13
             y -= 10
 
+        # --- Overall System Summary ---
         c.setFont("Helvetica-Bold", 12)
         c.drawString(50, y, "Overall System-Calculated Summary:")
         y -= 15
@@ -522,12 +537,13 @@ elif nav=="Scenario Builder":
             c.drawString(60, y, line)
             y -= 13
 
-        # Footer
+        # --- Footer ---
         c.setFont("Helvetica-Oblique", 9)
         c.drawString(50, 40, "Generated by Data Leaf – AI-assisted Sustainability Dashboard")
         c.save()
 
-        pdf = buffer.getvalue(); buffer.close()
+        pdf = buffer.getvalue()
+        buffer.close()
 
         st.download_button(
             "📥 Download Complete Scenario Summary (PDF with Charts)",
@@ -535,6 +551,7 @@ elif nav=="Scenario Builder":
             file_name="Waterloo_Scenario_Summary.pdf",
             mime="application/pdf"
         )
+
 
 
 # =========================================================
