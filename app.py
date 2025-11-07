@@ -64,7 +64,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 USE_AI = bool(OPENAI_API_KEY)
 if USE_AI:
     with st.expander(" Smart Assist Connection ", expanded=False):
-        st.caption("Visible only because your API key is active. Public users won’t see this.")
+        st.caption("For faster smarter decisions.")
         try:
             r = requests.post(
                 "https://api.openai.com/v1/chat/completions",
