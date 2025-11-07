@@ -432,6 +432,7 @@ elif nav=="Scenario Builder":
         return y - 20
 
 
+
     # --- Radio button for report type ---
     include_charts = st.radio(
         "Include charts in download?",
