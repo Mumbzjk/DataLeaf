@@ -171,32 +171,25 @@ if nav=="Overview":
     # --- Interactive scenario panel function ---
     def scenario_panel(title, df, color):
         em_t, cost_t = df["tCO2e"].sum(), df["Cost_CAD"].sum()
+# --- Emissions and Cost chart (two-axis combo, simple + stable) ---
+base = alt.Chart(df).encode(x=alt.X("Month", sort=months))
 
-        # Interactive graph (hover + zoom)
-        df["Emissions"] = df["tCO2e"]
-df["Cost"] = df["Cost_CAD"]
-
-chart = (
-    alt.Chart(df)
-    .transform_fold(["Emissions", "Cost"], as_=["Metric", "Value"])
-    .mark_line(interpolate="monotone", point=True)
-    .encode(
-        x=alt.X("Month:N", sort=months, title=None),
-        y=alt.Y("Value:Q", title="Emissions / Cost"),
-        color=alt.Color(
-            "Metric:N",
-            scale=alt.Scale(domain=["Emissions", "Cost"], range=[color, "#b0bec5"]),
-            legend=alt.Legend(title="Metric Type")
-        ),
-        tooltip=[
-            alt.Tooltip("Month:N"),
-            alt.Tooltip("Metric:N", title="Type"),
-            alt.Tooltip("Value:Q", title="Value", format=",.2f")
-        ],
-    )
-    .interactive()
-    .properties(width=300, height=180, title=title)
+emissions_line = base.mark_line(color=color, strokeWidth=3).encode(
+    y=alt.Y("tCO2e:Q", title="Emissions (tCO₂e)"),
+    tooltip=[alt.Tooltip("Month"), alt.Tooltip("tCO2e", title="Emissions (tCO₂e)", format=",.1f")]
 )
+
+cost_bar = base.mark_bar(opacity=0.3, color="#b0bec5").encode(
+    y=alt.Y("Cost_CAD:Q", title="Cost (CAD)"),
+    tooltip=[alt.Tooltip("Cost_CAD", title="Cost (CAD)", format=",.0f")]
+)
+
+chart = (emissions_line + cost_bar).resolve_scale(y="independent").interactive().properties(
+    width=300, height=180, title=title
+)
+
+st.altair_chart(chart, use_container_width=True)
+st.caption(f"Total: {em_t:,.1f} tCO₂e | ${cost_t:,.0f} CAD")
 
         # Dynamic monthly summary selector
         month_sel = st.selectbox(f"View details for month ({title})", months, key=f"month_{title}")
