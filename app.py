@@ -122,107 +122,129 @@ bld_c, flt_c, wst_c = bld["cost"].sum(), flt["cost"].sum(), wst["cost"].sum()
 grand_t, grand_c = bld_t + flt_t + wst_t, bld_c + flt_c + wst_c
 
 # =========================================================
-
-# OVERVIEW — AI-Assisted Snapshot
+# OVERVIEW
 # =========================================================
-  elif nav=="Overview":
-    st.markdown("### 🌿 AI-Assisted Overview — City of Waterloo Climate Snapshot")
-    st.caption("Instantly see where emissions and costs stand — updated from your data for smarter decisions.")
+if nav=="Overview":
+    st.subheader("Overview – Emissions and Cost")
+    st.caption("_Demo data period: Jan–Jun 2025. All charts have explicit units._")
 
-    # --- Monthly/Annual toggle ---
-    view_mode = st.radio("View Mode", ["Monthly", "Annual"], horizontal=True, index=0)
-    is_monthly = (view_mode == "Monthly")
+    a,b,c,d,e = st.columns(5)
+    a.metric("Total (tCO₂e)", fmt(grand_t))
+    b.metric("Buildings (tCO₂e)", fmt(bld_t))
+    c.metric("Fleet (tCO₂e)", fmt(flt_t))
+    d.metric("Waste (tCO₂e)", fmt(wst_t))
+    e.metric("Total Cost (CAD)", f"${grand_c:,.0f}")
 
-    # --- Synthetic data reused from earlier ---
-    import pandas as pd
-    import altair as alt
-    import numpy as np
-    import datetime as dt
+    view_mode = st.selectbox("View mode:", ["Monthly", "Annual"], index=0)
 
-    months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-    month_idx = np.arange(1,13)
-    b_em = np.random.uniform(80,120,12)
-    f_em = np.random.uniform(35,60,12)
-    w_em = np.random.uniform(5,12,12)
-
-    df_b = pd.DataFrame({"Month": months, "tCO2e": b_em, "Cost": b_em*650})
-    df_f = pd.DataFrame({"Month": months, "tCO2e": f_em, "Cost": f_em*720})
-    df_w = pd.DataFrame({"Month": months, "tCO2e": w_em, "Cost": w_em*400})
-
-    # --- Totals for key indicators ---
-    b_t, f_t, w_t = df_b["tCO2e"].sum(), df_f["tCO2e"].sum(), df_w["tCO2e"].sum()
-    total_em = b_t + f_t + w_t
-    total_cost = df_b["Cost"].sum() + df_f["Cost"].sum() + df_w["Cost"].sum()
-
-    # --- KPI Cards ---
-    c1, c2, c3, c4 = st.columns([1,1,1,1])
-    c1.metric("Total Emissions (tCO₂e)", f"{total_em:,.1f}")
-    c2.metric("Buildings", f"{b_t:,.1f}")
-    c3.metric("Fleet", f"{f_t:,.1f}")
-    c4.metric("Waste", f"{w_t:,.1f}")
-
-    st.markdown("---")
-
-    # --- Chart generator with colour theme ---
-    def make_chart(df, color, title):
-        base = alt.Chart(df).mark_line(interpolate='monotone', point=True).encode(
-            x=alt.X('Month', sort=months),
-            y=alt.Y('tCO2e', title='Emissions (tCO₂e)'),
-            color=alt.value(color)
-        ).properties(title=title, width=320, height=200)
-
-        bars = alt.Chart(df).mark_bar(opacity=0.3, color=color).encode(
-            x='Month', y='Cost'
+    def overview_chart(df, title, bar_color, line_color):
+        data = df.groupby("month",as_index=False)[["tco2e","cost"]].sum()
+        bars = alt.Chart(data).mark_bar(color=bar_color).encode(
+            x=alt.X("month:N", title="Month"),
+            y=alt.Y("tco2e:Q", title="Emissions (tCO₂e)"),
+            tooltip=["month","tco2e","cost"]
         )
-        return alt.layer(bars, base).resolve_scale(y='independent')
-
-    # --- Display three charts side by side ---
-    col_b, col_f, col_w = st.columns(3)
-    with col_b:
-        st.markdown("#### 🏢 Buildings")
-        st.altair_chart(make_chart(df_b, "#1e6c93", "Buildings — Emissions & Cost"), use_container_width=True)
-        st.caption(f"Annual total: {b_t:,.1f} tCO₂e | ${df_b['Cost'].sum():,.0f}")
-
-    with col_f:
-        st.markdown("#### 🚗 Fleet")
-        st.altair_chart(make_chart(df_f, "#2a9d8f", "Fleet — Emissions & Cost"), use_container_width=True)
-        st.caption(f"Annual total: {f_t:,.1f} tCO₂e | ${df_f['Cost'].sum():,.0f}")
-
-    with col_w:
-        st.markdown("#### ♻️ Waste")
-        st.altair_chart(make_chart(df_w, "#8a5a44", "Waste — Emissions & Cost"), use_container_width=True)
-        st.caption(f"Annual total: {w_t:,.1f} tCO₂e | ${df_w['Cost'].sum():,.0f}")
-
-    st.markdown("---")
-
-    # --- AI-Assisted Insight (no vendor mention) ---
-    try:
-        if is_monthly:
-            insight = (
-                f"AI-Assisted Summary: Emissions are stable across months, "
-                f"with Buildings contributing {(b_t/total_em)*100:.1f}% of total impact. "
-                f"Fleet efficiency trends suggest an opportunity to save approximately ${df_f['Cost'].mean():,.0f} per month."
-            )
-        else:
-            insight = (
-                f"AI-Assisted Summary: Annual totals indicate combined emissions of {total_em:,.1f} tCO₂e "
-                f"with total operational cost near ${total_cost:,.0f}. "
-                f"Buildings remain the primary source of emissions, followed by fleet."
-            )
-        st.markdown(
-            f"""
-            <div style='background:#e8f5e9;border-left:6px solid #1e6c93;
-            padding:12px;border-radius:8px;margin-top:12px;'>
-            <strong style='color:#1e6c93;'>💡 {insight}</strong>
-            </div>
-            """,
-            unsafe_allow_html=True
+        line = alt.Chart(data).mark_line(point=True, color=line_color, strokeWidth=3).encode(
+            x="month:N",
+            y=alt.Y("cost:Q", title="Cost (CAD)"),
+            tooltip=["month","tco2e","cost"]
         )
-    except Exception:
-        st.info("_System Summary: Emissions and cost calculated from current dataset._")
+        st.altair_chart(alt.layer(bars,line).resolve_scale(y='independent').properties(title=title, height=260),
+                        use_container_width=True)
 
-    if not is_monthly:
-        st.caption("_*Annual totals aggregated from all facilities and sources._")
+    if view_mode == "Monthly":
+        c1,c2,c3 = st.columns(3)
+        with c1: overview_chart(bld,"Buildings","#1e6c93","#9ecae1")
+        with c2: overview_chart(flt,"Fleet","#2a9d8f","#9fdacb")
+        with c3: overview_chart(wst,"Waste","#8a5a44","#d6b7a6")
+    else:
+        annual = pd.DataFrame({
+            "Category":["Buildings","Fleet","Waste"],
+            "Emissions":[bld_t, flt_t, wst_t],
+            "Cost":[bld_c, flt_c, wst_c]
+        })
+        c1,c2 = st.columns(2)
+        with c1:
+            st.altair_chart(
+                alt.Chart(annual).mark_bar(color="#1e6c93").encode(
+                    x=alt.X("Category:N", title="Category"),
+                    y=alt.Y("Emissions:Q", title="Emissions (tCO₂e)"),
+                    tooltip=["Category","Emissions"]
+                ).properties(title="Annual Emissions by Category", height=320),
+                use_container_width=True
+            )
+        with c2:
+            st.altair_chart(
+                alt.Chart(annual).mark_bar(color="#9ecae1").encode(
+                    x=alt.X("Category:N", title="Category"),
+                    y=alt.Y("Cost:Q", title="Cost (CAD)"),
+                    tooltip=["Category","Cost"]
+                ).properties(title="Annual Cost by Category", height=320),
+                use_container_width=True
+            )
+        st.caption("*Annual totals are aggregated from all facilities and sources.*")
+
+    # --- Overview Report (PDF with fallback to Markdown)
+    def build_overview_report_pdf(is_monthly: bool) -> bytes:
+        try:
+            from reportlab.lib.pagesizes import LETTER
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.units import inch
+            buf = io.BytesIO()
+            c = canvas.Canvas(buf, pagesize=LETTER)
+            title = "Data Leaf – Overview Report"
+            sub = f"View mode: {'Monthly' if is_monthly else 'Annual'} • Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+            totals = [
+                f"Total emissions: {fmt(grand_t)} tCO2e",
+                f"Total annualized cost: ${grand_c:,.0f}",
+                f"Buildings: {fmt(bld_t)} tCO2e • ${bld_c:,.0f}",
+                f"Fleet: {fmt(flt_t)} tCO2e • ${flt_c:,.0f}",
+                f"Waste: {fmt(wst_t)} tCO2e • ${wst_c:,.0f}",
+            ]
+            w,h = LETTER; y = h - 1.0*inch
+            c.setFont("Helvetica-Bold", 14); c.drawString(1*inch, y, title); y -= 0.35*inch
+            c.setFont("Helvetica", 10); c.drawString(1*inch, y, sub); y -= 0.4*inch
+            c.setFont("Helvetica", 11)
+            for line in totals:
+                c.drawString(1*inch, y, f"• {line}"); y -= 0.24*inch
+            if not is_monthly:
+                c.setFont("Helvetica-Oblique", 10)
+                c.drawString(1*inch, y-0.1*inch, "Annual totals are aggregated from all facilities and sources.")
+            c.showPage(); c.save(); buf.seek(0)
+            return buf.read()
+        except Exception:
+            return b""
+
+    def build_overview_report_md(is_monthly: bool) -> bytes:
+        md = f"""# Data Leaf – Overview Report
+
+**View mode:** {'Monthly' if is_monthly else 'Annual'}  
+**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M')}
+
+**Totals (Demo period: Jan–Jun 2025)**
+- Total emissions: {fmt(grand_t)} tCO₂e  
+- Total annualized cost: ${grand_c:,.0f}  
+- Buildings: {fmt(bld_t)} tCO₂e • ${bld_c:,.0f}  
+- Fleet: {fmt(flt_t)} tCO₂e • ${flt_c:,.0f}  
+- Waste: {fmt(wst_t)} tCO₂e • ${wst_c:,.0f}
+
+{('*Annual totals are aggregated from all facilities and sources.*' if not is_monthly else '')}
+"""
+        return md.encode("utf-8")
+
+    st.divider()
+    want_pdf = st.checkbox("Download Overview Report as PDF (fallback to Markdown if PDF not available)", value=True)
+    monthly_flag = (view_mode == "Monthly")
+    pdf_bytes = build_overview_report_pdf(monthly_flag) if want_pdf else b""
+    if want_pdf and pdf_bytes:
+        st.download_button("Download Overview Report (PDF)", pdf_bytes,
+                           file_name="DataLeaf_Overview_Report.pdf",
+                           mime="application/pdf", use_container_width=True)
+    else:
+        md_bytes = build_overview_report_md(monthly_flag)
+        st.download_button("Download Overview Report (Markdown)", md_bytes,
+                           file_name="DataLeaf_Overview_Report.md",
+                           mime="text/markdown", use_container_width=True)
 
 # =========================================================
 # SCENARIO BUILDER
