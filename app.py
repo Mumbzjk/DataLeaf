@@ -393,7 +393,7 @@ elif nav=="Scenario Builder":
     st.markdown("#### 📄 Download Scenario Summary")
 
     # --- Helper function for chart scaling ---
-    def draw_chart_centered(c, path, y, page_width, page_height, max_width=340):
+    def draw_chart_centered(c, path, y, page_width, page_height, max_width=270):
         """Draws chart proportionally centered on the PDF."""
         try:
             img = ImageReader(path)
