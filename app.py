@@ -20,20 +20,32 @@ st.set_page_config(page_title="Data Leaf – City of Waterloo Pilot MVP",
                    page_icon=LOGO_URL, layout="wide")
 
 # ----------------- HEADER -----------------
+# ----------------- HEADER (fixed logo visibility & layout) -----------------
 st.markdown("""
 <style>
-.block-container {
-    padding-top: 0.2rem !important;
-}
-header, .stApp header {
+/* Keep top padding modest so header/logo stay visible */
+.block-container { padding-top: 0.8rem !important; }
+
+/* Ensure Streamlit header area remains visible */
+header, .stApp header { 
     visibility: visible !important;
+    height: auto !important;
 }
-.headerbar img {
-    max-height: 70px !important;
+
+/* Force logo to display clearly and align nicely with title */
+header img, .stApp header img {
+    height: 68px !important;
+    display: inline-block !important;
+    visibility: visible !important;
+    margin-right: 0.5rem !important;
+    vertical-align: middle !important;
 }
-div[data-testid="stToolbar"] { display: none !important; }  /* hide dev toolbar */
+
+/* Hide dev toolbar only, keep normal header */
+div[data-testid="stToolbar"] { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
+
 
 # ----------------- SMART ASSIST (Developer only) -----------------
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
