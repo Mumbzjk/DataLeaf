@@ -123,49 +123,47 @@ grand_t, grand_c = bld_t + flt_t + wst_t, bld_c + flt_c + wst_c
 
 # =========================================================
 # OVERVIEW
-
 # =========================================================
-# OVERVIEW — AI-Assisted Snapshot
+# OVERVIEW — AI-Assisted Snapshot (Final Revision)
 # =========================================================
-if nav=="Overview":
+elif nav=="Overview":
     st.markdown("### 🌿 AI-Assisted Overview — City of Waterloo Climate Snapshot")
-    st.caption("Instantly see where emissions and costs stand — updated from your data for smarter decisions.")
+    st.caption("Instantly see where emissions and costs stand — updated from your data for smarter, faster decisions.")
 
-    # --- Monthly/Annual toggle ---
+    # --- Logo (Data Leaf only) ---
+    st.image("https://thedataleaf.com/wp-content/uploads/2025/09/Untitled-design-10-1.png",
+             width=180)
+
+    # --- Monthly / Annual toggle ---
     view_mode = st.radio("View Mode", ["Monthly", "Annual"], horizontal=True, index=0)
     is_monthly = (view_mode == "Monthly")
 
-    # --- Synthetic data reused from earlier ---
-    import pandas as pd
-    import altair as alt
-    import numpy as np
-    import datetime as dt
-
+    # --- Synthetic data ---
+    import pandas as pd, numpy as np, altair as alt
     months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-    month_idx = np.arange(1,13)
     b_em = np.random.uniform(80,120,12)
     f_em = np.random.uniform(35,60,12)
     w_em = np.random.uniform(5,12,12)
+    df_b = pd.DataFrame({"Month": months, "tCO2e": b_em, "Cost_CAD": b_em*650})
+    df_f = pd.DataFrame({"Month": months, "tCO2e": f_em, "Cost_CAD": f_em*720})
+    df_w = pd.DataFrame({"Month": months, "tCO2e": w_em, "Cost_CAD": w_em*400})
 
-    df_b = pd.DataFrame({"Month": months, "tCO2e": b_em, "Cost": b_em*650})
-    df_f = pd.DataFrame({"Month": months, "tCO2e": f_em, "Cost": f_em*720})
-    df_w = pd.DataFrame({"Month": months, "tCO2e": w_em, "Cost": w_em*400})
-
-    # --- Totals for key indicators ---
+    # --- Totals ---
     b_t, f_t, w_t = df_b["tCO2e"].sum(), df_f["tCO2e"].sum(), df_w["tCO2e"].sum()
     total_em = b_t + f_t + w_t
-    total_cost = df_b["Cost"].sum() + df_f["Cost"].sum() + df_w["Cost"].sum()
+    total_cost = df_b["Cost_CAD"].sum() + df_f["Cost_CAD"].sum() + df_w["Cost_CAD"].sum()
 
-    # --- KPI Cards ---
-    c1, c2, c3, c4 = st.columns([1,1,1,1])
-    c1.metric("Total Emissions (tCO₂e)", f"{total_em:,.1f}")
-    c2.metric("Buildings", f"{b_t:,.1f}")
-    c3.metric("Fleet", f"{f_t:,.1f}")
-    c4.metric("Waste", f"{w_t:,.1f}")
+    # --- KPIs (with period clarity) ---
+    period_label = "Monthly" if is_monthly else "Annual"
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric(f"Total Emissions (tCO₂e) — {period_label}", f"{total_em:,.1f}")
+    c2.metric(f"Buildings ({period_label})", f"{b_t:,.1f} tCO₂e")
+    c3.metric(f"Fleet ({period_label})", f"{f_t:,.1f} tCO₂e")
+    c4.metric(f"Waste ({period_label})", f"{w_t:,.1f} tCO₂e")
 
     st.markdown("---")
 
-    # --- Chart generator with colour theme ---
+    # --- Chart builder ---
     def make_chart(df, color, title):
         base = alt.Chart(df).mark_line(interpolate='monotone', point=True).encode(
             x=alt.X('Month', sort=months),
@@ -174,58 +172,87 @@ if nav=="Overview":
         ).properties(title=title, width=320, height=200)
 
         bars = alt.Chart(df).mark_bar(opacity=0.3, color=color).encode(
-            x='Month', y='Cost'
+            x='Month', y=alt.Y('Cost_CAD', title='Cost ($CAD)')
         )
         return alt.layer(bars, base).resolve_scale(y='independent')
 
-    # --- Display three charts side by side ---
+    # --- Three panels side by side ---
     col_b, col_f, col_w = st.columns(3)
     with col_b:
         st.markdown("#### 🏢 Buildings")
         st.altair_chart(make_chart(df_b, "#1e6c93", "Buildings — Emissions & Cost"), use_container_width=True)
-        st.caption(f"Annual total: {b_t:,.1f} tCO₂e | ${df_b['Cost'].sum():,.0f}")
+        st.caption(f"Annual total: {b_t:,.1f} tCO₂e | ${df_b['Cost_CAD'].sum():,.0f} CAD")
 
     with col_f:
         st.markdown("#### 🚗 Fleet")
         st.altair_chart(make_chart(df_f, "#2a9d8f", "Fleet — Emissions & Cost"), use_container_width=True)
-        st.caption(f"Annual total: {f_t:,.1f} tCO₂e | ${df_f['Cost'].sum():,.0f}")
+        st.caption(f"Annual total: {f_t:,.1f} tCO₂e | ${df_f['Cost_CAD'].sum():,.0f} CAD")
 
     with col_w:
         st.markdown("#### ♻️ Waste")
         st.altair_chart(make_chart(df_w, "#8a5a44", "Waste — Emissions & Cost"), use_container_width=True)
-        st.caption(f"Annual total: {w_t:,.1f} tCO₂e | ${df_w['Cost'].sum():,.0f}")
+        st.caption(f"Annual total: {w_t:,.1f} tCO₂e | ${df_w['Cost_CAD'].sum():,.0f} CAD")
 
     st.markdown("---")
 
-    # --- AI-Assisted Insight (no vendor mention) ---
-    try:
-        if is_monthly:
-            insight = (
-                f"AI-Assisted Summary: Emissions are stable across months, "
-                f"with Buildings contributing {(b_t/total_em)*100:.1f}% of total impact. "
-                f"Fleet efficiency trends suggest an opportunity to save approximately ${df_f['Cost'].mean():,.0f} per month."
-            )
-        else:
-            insight = (
-                f"AI-Assisted Summary: Annual totals indicate combined emissions of {total_em:,.1f} tCO₂e "
-                f"with total operational cost near ${total_cost:,.0f}. "
-                f"Buildings remain the primary source of emissions, followed by fleet."
-            )
+    # --- SYSTEM-GENERATED SUMMARY ---
+    sys_summary = (
+        f"System-Generated Summary: {period_label} data indicates total emissions of "
+        f"{total_em:,.1f} tCO₂e with combined operational cost of ${total_cost:,.0f} CAD. "
+        f"Buildings account for {(b_t/total_em)*100:.1f}% of emissions, Fleet {(f_t/total_em)*100:.1f}%, and Waste {(w_t/total_em)*100:.1f}%."
+    )
+    st.markdown(
+        f"""
+        <div style='background:#E3F2FD;border-left:6px solid #1e6c93;
+        padding:12px;border-radius:8px;margin-top:12px;'>
+        <strong style='color:#1e6c93;'>🧮 {sys_summary}</strong>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # --- AI-GENERATED SUMMARY ---
+    st.markdown("### 🤖 AI-Generated Summary")
+    st.caption("AI-assisted insight interpreting cost, emission trends, and key opportunities.")
+
+    import requests
+    if "ai_summary" not in st.session_state:
+        st.session_state.ai_summary = None
+
+    if st.button("Generate AI Summary"):
+        prompt = (
+            f"Provide a concise plain-language summary of Waterloo’s {period_label.lower()} data: "
+            f"Buildings={b_t:,.1f} tCO₂e (${df_b['Cost_CAD'].sum():,.0f}), "
+            f"Fleet={f_t:,.1f} tCO₂e (${df_f['Cost_CAD'].sum():,.0f}), "
+            f"Waste={w_t:,.1f} tCO₂e (${df_w['Cost_CAD'].sum():,.0f}). "
+            f"Highlight key trends, costs, and areas for improvement."
+        )
+        try:
+            r = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {OPENAI_API_KEY}",
+                    "Content-Type": "application/json"},
+                json={"model": "gpt-4o-mini",
+                      "messages": [{"role": "user", "content": prompt}]})
+            st.session_state.ai_summary = r.json()["choices"][0]["message"]["content"]
+        except Exception as e:
+            st.error(f"AI summary failed: {e}")
+
+    if st.session_state.ai_summary:
         st.markdown(
             f"""
-            <div style='background:#e8f5e9;border-left:6px solid #1e6c93;
+            <div style='background:#E8F5E9;border-left:6px solid #2E7D32;
             padding:12px;border-radius:8px;margin-top:12px;'>
-            <strong style='color:#1e6c93;'>💡 {insight}</strong>
+            <strong style='color:#2E7D32;'>AI-Generated Summary:</strong><br>
+            {st.session_state.ai_summary}
             </div>
             """,
             unsafe_allow_html=True
         )
-    except Exception:
-        st.info("_System Summary: Emissions and cost calculated from current dataset._")
 
     if not is_monthly:
         st.caption("_*Annual totals aggregated from all facilities and sources._")
-
 
 # =========================================================
 # SCENARIO BUILDER
