@@ -252,6 +252,35 @@ if nav=="Overview":
 elif nav=="Scenario Builder":
  
     st.subheader("Scenario Builder")
+    ...
+    # ---- Charts + summaries here ----
+    ...
+    # ---- PDF Export (with/without charts) ----
+    from io import BytesIO
+    ...
+    st.markdown("#### 📄 Download Scenario Summary")
+    include_charts = st.radio(
+        "Include charts in download?",
+        ["✅ Yes (Full Report with Charts)", "📝 No (Text-Only Summary)"],
+        horizontal=True
+    )
+
+    if st.button("Generate PDF"):
+        ...
+        st.download_button(
+            "📥 Download Scenario Summary PDF",
+            data=pdf,
+            file_name="Waterloo_Scenario_Summary.pdf",
+            mime="application/pdf"
+        )
+
+# =========================================================
+# FUNDING SECTION STARTS HERE
+# =========================================================
+elif nav=="Funding & Grants":
+    ...
+
+    st.subheader("Scenario Builder")
     st.caption("Simulate how retrofits, EV adoption, and waste diversion affect Waterloo’s emissions and annual operating costs in real time.")
 
     # --- Sliders ---
