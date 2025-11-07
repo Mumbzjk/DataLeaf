@@ -423,7 +423,7 @@ elif nav=="Scenario Builder":
         temp_dir = tempfile.mkdtemp()
 
         # --- Chart export helper (only if selected) ---
-        def save_chart_as_png(chart, filename, scale=3):
+        def save_chart_as_png(chart, filename, scale=2):
             path = os.path.join(temp_dir, filename)
             chart.save(path, format="png", scale_factor=scale)
             return path
