@@ -11,7 +11,7 @@ from datetime import datetime
 import time
 
 # ----------------- LOADING SCREEN -----------------
-with st.spinner("🌿 Loading Data Leaf Dashboard — analyzing municipal emissions, costs, and funding insights..."):
+with st.spinner("Loading Data Leaf Dashboard — analyzing municipal emissions, costs, and funding insights..."):
     time.sleep(1.8)
 
 # ----------------- PAGE CONFIG -----------------
